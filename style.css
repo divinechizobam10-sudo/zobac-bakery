@@ -3055,10 +3055,10 @@ color: #4b3a50
         flex-shrink: 0;
     }
 
-    .navbar .account-menu-options {
-        position: absolute;
-        top: calc(100% + 5px);
-        right: 0;
-        z-index: 99999;
+   .navbar .account-menu-options {
+        position: fixed;
+        top: 70px;
+        right: 10px;
+        z-index: 999999;
     }
 }
