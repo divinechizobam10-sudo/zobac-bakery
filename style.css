@@ -2996,7 +2996,7 @@ color: #4b3a50
 .value-card h3 {
     font-size: 20px;
 }
-/* MOBILE NAVBAR FIX */
+/* MOBILE NAVBAR */
 @media (max-width: 768px) {
 
     .navbar {
@@ -3016,10 +3016,8 @@ color: #4b3a50
         padding-left: 10px;
         padding-right: 10px;
 
-        margin-left: 0;
-        margin-right: 0;
+        margin: 0;
 
-        scroll-padding-left: 10px;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
     }
@@ -3029,15 +3027,13 @@ color: #4b3a50
     }
 
 
-    /* Keep navbar items in one row */
+    /* Keep the main navbar items in one row */
     .navbar .brand,
     .navbar .see,
     .navbar .nav-links {
         flex-shrink: 0;
     }
 
-
-    /* Navigation links */
     .navbar .nav-links {
         display: flex;
         align-items: center;
@@ -3047,7 +3043,7 @@ color: #4b3a50
     }
 
 
-    /* Prevent buttons and links from shrinking */
+    /* Prevent links/buttons from being squeezed */
     .navbar .nav-links > a,
     .navbar .nav-links > button {
         flex-shrink: 0;
@@ -3055,32 +3051,36 @@ color: #4b3a50
     }
 
 
-    /* Account menu button */
+    /* Account button */
     .navbar .account-menu {
-        position: relative;
+        position: static;
         flex-shrink: 0;
     }
-
 
     .navbar .account-grid-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-
         white-space: nowrap;
         flex-shrink: 0;
     }
 
 
-    /* Account Options dropdown */
-    .navbar .account-menu-options {
+    /*
+       ACCOUNT OPTIONS
+       Float over the HOME PAGE
+       instead of staying inside the navbar
+    */
+    .navbar #accountMenuOptions {
         position: fixed !important;
 
-        top: 70px !important;
+        top: 75px !important;
         right: 10px !important;
 
-        width: 280px;
-        max-width: calc(100vw - 20px);
+        width: 280px !important;
+        max-width: calc(100vw - 20px) !important;
+
+        margin: 0 !important;
 
         z-index: 999999 !important;
     }
