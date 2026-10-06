@@ -2395,45 +2395,42 @@ body {
 
 /* Phone */
 @media (max-width: 600px) {
-.navbar {
+    .navbar {
         width: 100%;
         box-sizing: border-box;
         display: flex;
-        flex-direction: row;
+        flex-wrap: nowrap;
         align-items: center;
+        gap: 15px;
         padding: 10px 12px;
-        gap: 10px;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
     }
 
     .brand {
-        flex-shrink: 0;
+        flex: 0 0 auto;
+        width: auto;
     }
 
-.nav-links {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: 8px;
-    white-space: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    flex: 1;
-    min-width: 0;
-    scrollbar-width: none;
-}
+    .nav-links {
+        display: flex;
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        gap: 10px;
+        width: max-content;
+        overflow: visible;
+        white-space: nowrap;
+    }
 
-.nav-links::-webkit-scrollbar {
-    display: none;
-}
-
-.nav-links a,
-.nav-links button {
-    flex-shrink: 0;
-    padding: 8px 10px;
-    font-size: 13px;
-    white-space: nowrap;
-}
+    .nav-links a,
+    .nav-links button {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        width: auto;
+        padding: 9px 14px;
+        font-size: 14px;
+    }
 
     
     .footer-links a {
