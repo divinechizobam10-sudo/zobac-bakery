@@ -3070,20 +3070,24 @@ color: #4b3a50
 .value-card h3 {
     font-size: 20px;
 }
-/* =========================
-   MOBILE NAVBAR ONLY
-   ========================= */
+/* MOBILE NAVBAR FIX */
 @media (max-width: 768px) {
 
     .navbar {
         width: 100%;
+        max-width: 100%;
         box-sizing: border-box;
-        overflow-x: auto;
-        overflow-y: visible;
-        white-space: nowrap;
         display: flex;
         align-items: center;
         flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: visible;
+        white-space: nowrap;
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-left: 0;
+        margin-right: 0;
+        scroll-padding-left: 10px;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
     }
@@ -3092,48 +3096,43 @@ color: #4b3a50
         display: none;
     }
 
-    .navbar .brand {
-        flex: 0 0 auto;
-    }
-
-    .navbar .see {
-        flex: 0 0 auto;
-        white-space: nowrap;
+    .navbar .brand,
+    .navbar .see,
+    .navbar .nav-links {
+        flex-shrink: 0;
     }
 
     .navbar .nav-links {
         display: flex;
         align-items: center;
         flex-wrap: nowrap;
-        flex: 0 0 auto;
         gap: 10px;
         white-space: nowrap;
     }
 
     .navbar .nav-links > a,
     .navbar .nav-links > button {
-        flex: 0 0 auto;
+        flex-shrink: 0;
         white-space: nowrap;
     }
 
     .navbar .account-menu {
         position: relative;
-        flex: 0 0 auto;
-        display: block;
+        flex-shrink: 0;
     }
 
     .navbar .account-grid-btn {
-        flex: 0 0 auto;
-        white-space: nowrap;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     .navbar .account-menu-options {
         position: absolute;
-        top: 100%;
+        top: calc(100% + 5px);
         right: 0;
-        z-index: 9999;
+        z-index: 99999;
     }
 }
