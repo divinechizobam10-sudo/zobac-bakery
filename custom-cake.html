@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zobac Bakery- Custom Cake</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <h2>Zobac Bakery</h2>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="shop.html">Shop</a>
+            <a href="cart.html">🛒Cart</a>
+            <a href="orders.html">My Orders</a>
+            <a href="account.html">Account</a>
+        </div>
+    </nav>
+    <h1>Customize Cakes</h1>
+    <div class="custom-cake-form">
+        <input type="text" id="cakeType" placeholder="Cake type e.g Birthday, Welcome back">
+        <select id="cakeSize"><option value="">Select Cake Size</option>
+        <option
+            value="Small">Small</option>
+            <option value="Medium">Medium</option>
+            <option value="Large">Large</option>
+            </select>
+            <strong><p id="cakePrice">Select a size to see the price</p></strong>
+        <input type="text" id="cakeTheme" placeholder="Cake Theme or Design">
+        <input type="text" id="cakeMessage" placeholder="Message on the Cake">
+    
+        <button id="customCakeBtn">Submit Cake Request</button>
+        <p id="cakeMessageResult"></p>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

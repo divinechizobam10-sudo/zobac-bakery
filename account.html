@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zobac Bakery - My Account</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="account-page">
+
+    <nav class="navbar">
+        <h2>Zobac Bakery</h2>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="shop.html">Shop</a>
+            <a href="cart.html">🛒 Cart</a>
+            <a href="orders.html">My Orders</a>
+        </div>
+    </nav>
+
+    <main class="account-layout">
+        <section class="account-header">
+            <div class="profile-avatar">👤</div>
+            <div>
+                <p class="account-label">ZOBAC BAKERY</p>
+                <h1>My Account</h1>
+                <p>Welcome to your personal space</p>
+            </div>
+        </section>
+
+        <section class="account-details">
+            <h2>Personal Information</h2>
+            <p>Manage your contact details below.</p>
+
+            <label for="accountName">Full Name</label>
+            <input type="text" id="accountName"
+                   placeholder="Your Full Name" readOnly>
+
+            <label for="accountPhone">Phone Number</label>
+            <input type="tel" id="accountPhone"
+                   placeholder="Your Phone Number" readOnly>
+
+            <div class="account-actions">
+                <button id="editAccountBtn">✏️ Edit Information</button>
+                <button id="saveAccountBtn">💾 Save Information</button>
+            </div>
+
+            <div id="accountInfo">
+                <p><strong>Name:</strong> <span id="savedName">Not saved yet</span></p>
+                <p><strong>Phone:</strong> <span id="savedPhone">Not saved yet</span></p>
+            </div>
+        </section>
+       
+
+   <!-- Account Actions Menu -->
+
+    <script src="script.js"></script>
+</body>
+</html>

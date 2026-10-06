@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zobac Bakery-Custom Pizza</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <h2>Zobac Bakery</h2>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="shop.html">Shop</a>
+            <a href="cart.html">🛒Cart</a>
+            <a href="orders.html">My Orders</a>
+            <a href="account.html">Account</a>
+        </div>
+    </nav>
+    <form class="pizza-form">
+
+    <select id="pizzaType">
+    <option value="">Select Pizza Type</option>
+    <option>Chicken Pizza</option>
+    <option>Beef Pizza</option>
+    <option>Beef & Chicken Pizza</option>
+    <option>Vegetable Pizza</option>
+    <option>Cheese Pizza</option>
+    <option>Supreme Pizza</option>
+</select>
+
+    <select id="pizzaSize">
+        <option value="">Select Pizza Size</option>
+        <option>Small</option>
+        <option>Medium</option>
+        <option>Large</option>
+    </select>
+    <strong><p id="pizzaPrice" style="color: black;">Select a size to see the price</p></strong>
+
+    <select id="pizzaCrust">
+        <option value="">Select Crust</option>
+        <option>Thin</option>
+        <option>Regular</option>
+        <option>Thick</option>
+    </select>
+
+  
+
+    <select id="pizzaSpice">
+        <option value="">Select Spice Level</option>
+        <option>Mild</option>
+        <option>Medium</option>
+        <option>Hot</option>
+    </select>
+
+    <textarea id="pizzaInstructions"
+        placeholder="Special Instructions"></textarea>
+
+    <button type="button" id="pizzaBtn">Add Pizza to Cart 🍕</button>
+
+</form>
+    <script src="script.js"></script>
+</body>
+</html>

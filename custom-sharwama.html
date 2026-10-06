@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Zobac Bakery - Shawarma</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <h2>Zobac Bakery</h2>
+
+        <div class="nav-links">
+
+            <a href="index.html">Home</a>
+            <a href="shop.html">Shop</a>
+            <a href="orders.html">📦 Orders</a>
+            <a href="account.html">👤 Account</a>
+
+            <a href="cart.html">
+                🛒 Cart (<span id="cartCount">0</span>)
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <h1>🌯 Customize Your Shawarma</h1>
+
+
+    <div class="shawarma-form">
+
+        <!-- Shawarma Type -->
+
+        <select id="shawarmaType">
+
+            <option value="">
+                Select Shawarma Type
+            </option>
+
+            <option>
+                Chicken Shawarma
+            </option>
+
+            <option>
+                Beef Shawarma
+            </option>
+
+            <option>
+                Chicken & Beef Shawarma
+            </option>
+
+        </select>
+
+
+        <!-- Shawarma Size -->
+
+        <select id="shawarmaSize">
+
+            <option value="">
+                Select Shawarma Size
+            </option>
+
+            <option>
+                Regular
+            </option>
+
+            <option>
+                Large
+            </option>
+
+        </select>
+        <strong><p id="shawarmaPrice" style=" color: black">Select a size to see the price</p></strong>
+
+       
+
+        <!-- Spice Level -->
+
+        <select id="shawarmaSpice">
+
+            <option value="">
+                Select Spice Level
+            </option>
+
+            <option>
+                Mild
+            </option>
+
+            <option>
+                Medium
+            </option>
+
+            <option>
+                Hot
+            </option>
+
+        </select>
+        <!-- Button -->
+
+        <button id="shawarmaBtn">
+            Add Shawarma to Cart 🌯
+        </button>
+
+
+        <p id="shawarmaMessage"></p>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

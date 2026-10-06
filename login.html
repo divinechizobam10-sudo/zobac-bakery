@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Zobac Bakery</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .login-container {
+            width: 90%;
+            max-width: 400px;
+            margin: 70px auto;
+            padding: 30px 25px;
+            background: #fff;
+            color: #333;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            box-sizing: border-box;
+        }
+
+        .login-container h2 {
+            text-align: center;
+            color: #8b5cf6;
+            margin-bottom: 10px;
+        }
+
+        .login-container p {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .login-container label {
+            display: block;
+            margin: 15px 0 7px;
+            font-weight: bold;
+        }
+
+        .login-container input {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .login-container button {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            padding: 13px;
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .login-container button:hover {
+            background: #7041d8;
+        }
+
+        #loginMessage {
+            color: red;
+            margin: 12px 0;
+            font-size: 14px;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .login-footer a {
+            color: #8b5cf6;
+            text-decoration: none;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 35px auto;
+                padding: 25px 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h2>Zobac Bakery</h2>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="login-container">
+            <h2>Welcome Back!</h2>
+            <p>Sign in to your Zobac Bakery account</p>
+
+            <form id="loginForm">
+                <label for="loginEmail">Email Address</label>
+                <input
+                    type="email"
+                    id="loginEmail"
+                    placeholder="Enter your email"
+                    required
+                >
+
+                <label for="loginPassword">Password</label>
+                <input
+                    type="password"
+                    id="loginPassword"
+                    placeholder="Enter your password"
+                    required
+                >
+
+                <p id="loginMessage" aria-live="polite"></p>
+
+               
+            </form>
+             <button type="button" id="loginBtn">Login</button>
+            <div class="login-footer">
+                <p>Don't have an account?
+                    <a href="register.html">Register here</a>
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

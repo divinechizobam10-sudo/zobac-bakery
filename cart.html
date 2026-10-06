@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zobac Bakery-Cart</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    if (localStorage.getItem("zobacLoggedIn") !== "true") {
+        document.documentElement.classList.add("login-required");
+    }
+</script>
+</head>
+<body>
+    <div id="loginPopup" class="login-popup">
+    <div class="login-popup-content">
+        <div class="login-popup-icon">🔐</div>
+        <h2>Kindly Login</h2>
+        <p>Please login or register to access this page and place your orders.</p>
+        <button onclick="window.location.href='login.html'">
+            Login
+        </button>
+    </div>
+</div>
+    <span id="cartCount">0</span>
+    <h1>Your Cart</h1>
+    <div id="cartItems">
+        <p>Your cart is empty.</p>
+    </div>
+    <h3 id="cartTotal">Total: ₦0 </h3>
+    <a href="shop.html"><button>Continue Shopping</button></a>
+    <button id="checkoutBtn" onclick="goToCheckout()" style="background: white; color: #6b247f;" >Checkout</button>
+    
+    <a href="index.html"><button>Back To Home</button></a>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zobac Bakery- Orders</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+    if (localStorage.getItem("zobacLoggedIn") !== "true") {
+        document.documentElement.classList.add("login-required");
+    }
+</script>
+</head>
+<body>
+    <div id="loginPopup" class="login-popup">
+    <div class="login-popup-content">
+        <div class="login-popup-icon">🔐</div>
+        <h2>Kindly Login</h2>
+        <p>Please login or register to access this page and place your orders.</p>
+        <button onclick="window.location.href='login.html'">
+            Login
+        </button>
+    </div>
+</div>
+   <nav class="navbar">
+    <h2>Zobac Bakery</h2>
+
+    <div class="nav-links">
+        <button type="button" id="gridMenuBtn" class="grid-menu-btn">
+            ☷
+        </button>
+
+        <div id="gridMenuOptions" class="grid-menu-options" style="display: none;">
+            <a href="index.html">🏠 Home</a>
+            <a href="cart.html">🛒 Cart (<span id="cartCount">0</span>)</a>
+            <a href="register.html">👤 Register</a>
+        </div>
+    </div>
+</nav>
+    
+    <h1>My Orders</h1>
+    <div id="ordersList"><p>No orders yet.</p></div>
+    <a href="index.html"><button>Back to Home</button></a>
+    <div id="deleteModal" class="delete-modal">
+        <div class="delete-box">
+            <h3>Delete Order?</h3>
+            <p>Are you sure you want to delete this order?</p>
+            <button id="yesDeleteBtn">Yes, Delete</button>
+            <button id="noDeleteBtn">No, Keep It</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

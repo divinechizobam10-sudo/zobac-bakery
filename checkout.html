@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zobac Bakery-Checkout</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Checkout</h1>
+    <div id="checkoutItems">
+        <p>Loading your order...</p>
+    </div>
+    <h2 id="checkoutTotal">Total: ₦0</h2>
+    <div class="checkout-form">
+        <input type="text" id="customerName" placeholder="Full Name">
+        <input type="tel" id="customerPhone" placeholder="Phone Number">
+        <textarea id="customerAddress" placeholder="Delivery Address"></textarea>
+        <label for="Delivery Date">Delivery Date</label>
+        <input type="date" id="deliveryDate">
+    </div>
+    <button id="placeOrderBtn"onclick="placeOrder()">Place Order</button>
+     <a href="orders.html" id="viewOrderBtn" style="display: none;"><button>View Order</button></a>
+    <p id="orderMessage"></p>
+    <a id="homeAfterOrder" href="index.html" style="display: none;"><button>Back to Home</button></a>
+    <br><br>
+    <a href="cart.html">
+        <button>Back to Cart</button>
+       
+    </a>
+    <script src="script.js"></script>
+</body>
+</html>
