@@ -3003,16 +3003,22 @@ color: #4b3a50
         width: 100%;
         max-width: 100%;
         box-sizing: border-box;
+
         display: flex;
         align-items: center;
         flex-wrap: nowrap;
+
         overflow-x: auto;
         overflow-y: visible;
+
         white-space: nowrap;
+
         padding-left: 10px;
         padding-right: 10px;
+
         margin-left: 0;
         margin-right: 0;
+
         scroll-padding-left: 10px;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
@@ -3022,12 +3028,16 @@ color: #4b3a50
         display: none;
     }
 
+
+    /* Keep navbar items in one row */
     .navbar .brand,
     .navbar .see,
     .navbar .nav-links {
         flex-shrink: 0;
     }
 
+
+    /* Navigation links */
     .navbar .nav-links {
         display: flex;
         align-items: center;
@@ -3036,29 +3046,42 @@ color: #4b3a50
         white-space: nowrap;
     }
 
+
+    /* Prevent buttons and links from shrinking */
     .navbar .nav-links > a,
     .navbar .nav-links > button {
         flex-shrink: 0;
         white-space: nowrap;
     }
 
+
+    /* Account menu button */
     .navbar .account-menu {
         position: relative;
         flex-shrink: 0;
     }
 
+
     .navbar .account-grid-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+
         white-space: nowrap;
         flex-shrink: 0;
     }
 
-   .navbar .account-menu-options {
-        position: fixed;
-        top: 70px;
-        right: 10px;
-        z-index: 999999;
+
+    /* Account Options dropdown */
+    .navbar .account-menu-options {
+        position: fixed !important;
+
+        top: 70px !important;
+        right: 10px !important;
+
+        width: 280px;
+        max-width: calc(100vw - 20px);
+
+        z-index: 999999 !important;
     }
 }
