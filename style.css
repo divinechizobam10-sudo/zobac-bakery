@@ -2410,31 +2410,30 @@ body {
         flex-shrink: 0;
     }
 
-    .nav-links {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        gap: 8px;
-        white-space: nowrap;
-        overflow-x: auto;
-        overflow-y: hidden;
-        flex: 1;
-        min-width: 0;
-        scrollbar-width: none;
-    }
+.nav-links {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex: 1;
+    min-width: 0;
+    scrollbar-width: none;
+}
 
-    .nav-links::-webkit-scrollbar {
-        display: none;
-    }
+.nav-links::-webkit-scrollbar {
+    display: none;
+}
 
-    .nav-links a,
-    .nav-links button {
-        flex-shrink: 0;
-        padding: 8px 10px;
-        font-size: 13px;
-        white-space: nowrap;
-    }
-
+.nav-links a,
+.nav-links button {
+    flex-shrink: 0;
+    padding: 8px 10px;
+    font-size: 13px;
+    white-space: nowrap;
+}
 
     
     .footer-links a {
