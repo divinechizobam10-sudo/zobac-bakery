@@ -1022,7 +1022,7 @@ document.addEventListener("DOMContentLoaded", function () {
             message.style.color = "green";
 
             setTimeout(function () {
-                window.location.href = "account.html";
+                window.location.href = "login.html";
             }, 1000);
         });
     }
