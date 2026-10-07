@@ -72,8 +72,8 @@ body{
     align-items: center;
     justify-content: center;
 
-    text-align: center;
-    color: #ffffff;
+    text-align: center ;
+    color: #ffffff !important; 
 
     padding: 40px 25px;
     box-sizing: border-box;
@@ -322,13 +322,14 @@ body{
 }
 
 .menu-section{
-    padding: 70px 20px;
+    padding: 50px 20px;
 }
 
 .menu-section h2{
     font-size: 36px;
-    margin-bottom: 35px;
+    margin-bottom: 30px;
     text-align: center;
+    color: #4B2E24;
 }
 
 .menu-container{
@@ -345,16 +346,26 @@ body{
     color: #3b174d;
     border-radius: 20px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    transition: box-shadow 0.3 ease;
+    transition: box-shadow 0.3s ease;
 }
 
-.menu-card :hover{
+.menu-card:hover{
     box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
 }
 
-.menu-image{
-    font-size: 60px;
+.menu-image {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    border-radius: 15px;
     margin-bottom: 15px;
+}
+
+.menu-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .menu-card h3{
@@ -618,8 +629,8 @@ body:has(#ordersList) h1 {
 
 .order-card {
     margin-bottom: 20px;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.92);
+    padding: 22px;
+    background: rgba(255, 255, 255, 0.94);
     color: #3b174d;
     border-radius: 20px;
     text-align: left;
@@ -649,7 +660,98 @@ body:has(#ordersList) > a button {
 body:has(#ordersList) > a button:hover {
     transform: translateY(-2px);
 }
+.delete-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    z-index: 9999;
+}
 
+.delete-box {
+    width: 100%;
+    max-width: 350px;
+    padding: 25px;
+    background: white;
+    color: #3b174d;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.delete-box h3 {
+    color: #6b247f;
+}
+
+.delete-box p {
+    color: #6b5a70;
+    margin-bottom: 25px;
+}
+
+.delete-box button {
+    padding: 12px 18px;
+    margin: 5px;
+    border: none;
+    border-radius: 20px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#yesDeleteBtn {
+    background: #d9534f;
+}
+
+#noDeleteBtn {
+    background: #6b247f;
+}
+
+/* Delete Order Button */
+.order-card button {
+    padding: 11px 20px;
+    margin-top: 15px;
+    border: none;
+    border-radius: 25px;
+    background: linear-gradient(135deg, #e53935, #b71c1c);
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(183, 28, 28, 0.2);
+    transition: 0.3s ease;
+}
+
+.order-card button:hover {
+    background: linear-gradient(135deg, #b71c1c, #8e0000);
+    transform: translateY(-3px);
+    box-shadow: 0 7px 15px rgba(183, 28, 28, 0.3);
+}
+
+.order-card button:active {
+    transform: scale(0.96);
+}
+
+/* Go to Cart Button */
+.cart-link {
+    display: inline-block;
+    padding: 12px 20px;
+    background: white;
+    color: #6b247f !important;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transition: 0.3s ease;
+}
+
+.cart-link:hover {
+    background: #fff0e5;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
 .account-card {
     width: 100%;
     max-width: 500px;
@@ -1085,98 +1187,7 @@ body:has(#ordersList) {
     }
 }
 
-.delete-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    z-index: 9999;
-}
 
-.delete-box {
-    width: 100%;
-    max-width: 350px;
-    padding: 25px;
-    background: white;
-    color: #3b174d;
-    border-radius: 20px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.delete-box h3 {
-    color: #6b247f;
-}
-
-.delete-box p {
-    color: #6b5a70;
-    margin-bottom: 25px;
-}
-
-.delete-box button {
-    padding: 12px 18px;
-    margin: 5px;
-    border: none;
-    border-radius: 20px;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-#yesDeleteBtn {
-    background: #d9534f;
-}
-
-#noDeleteBtn {
-    background: #6b247f;
-}
-
-/* Delete Order Button */
-.order-card button {
-    padding: 11px 20px;
-    margin-top: 15px;
-    border: none;
-    border-radius: 25px;
-    background: linear-gradient(135deg, #e53935, #b71c1c);
-    color: white;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(183, 28, 28, 0.2);
-    transition: 0.3s ease;
-}
-
-.order-card button:hover {
-    background: linear-gradient(135deg, #b71c1c, #8e0000);
-    transform: translateY(-3px);
-    box-shadow: 0 7px 15px rgba(183, 28, 28, 0.3);
-}
-
-.order-card button:active {
-    transform: scale(0.96);
-}
-
-/* Go to Cart Button */
-.cart-link {
-    display: inline-block;
-    padding: 12px 20px;
-    background: white;
-    color: #6b247f !important;
-    border-radius: 25px;
-    text-decoration: none;
-    font-weight: bold;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    transition: 0.3s ease;
-}
-
-.cart-link:hover {
-    background: #fff0e5;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-}
 
 /* REGISTRATION PAGE */
 
@@ -1227,6 +1238,7 @@ body:has(#ordersList) {
     font-weight: bold;
     font-size: 16px;
     cursor: pointer;
+    transition: 0.3s ease;
 }
 
 #registerBtn:hover {
@@ -3195,4 +3207,36 @@ color: #4b3a50
         rgba(20, 10, 30, 0.28),
         rgba(20, 10, 30, 0.38)
     );
+}
+/* Cart page */
+.cart-page {
+    text-align: center;
+    padding: 30px 15px;
+}
+
+.cart-page h1 {
+    color: #4B2E24;
+    margin-bottom: 25px;
+}
+
+#cartItems {
+    max-width: 700px;
+    margin: 0 auto 25px;
+}
+
+#cartTotal {
+    color: #6b247f;
+    font-size: 24px;
+    margin: 20px 0;
+}
+
+.cart-page button {
+    margin: 8px;
+    padding: 11px 20px;
+    border: none;
+    border-radius: 25px;
+    background: linear-gradient(135deg, #6b247f, #f07832);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
 }
