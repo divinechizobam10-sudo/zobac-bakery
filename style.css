@@ -1288,6 +1288,20 @@ body:has(#ordersList) {
     margin: 30px auto;
     border-radius: 20px;
     overflow: hidden;
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+.hero-logo{
+    width: 140px;
+    height: 140px;
+    object-fit: contain;
+}
+.hero h1{
+    font-size: 38px;
+}
+.hero p{
+    font-size: 18px;
 }
 
 .hero img {
