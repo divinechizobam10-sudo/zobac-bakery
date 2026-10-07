@@ -14,91 +14,175 @@ document.addEventListener("DOMContentLoaded", function () {
         accountMenu.style.display = isLoggedIn ? "inline-block" : "none";
     }
 });
-// ==========================
-// ZOBAC BAKERY
-// ==========================
+// ===============================
+// CUSTOMER-SPECIFIC CART SYSTEM
+// ===============================
 
-// Get saved cart
-let cart = JSON.parse(localStorage.getItem("zobacCart")) || [];
-cart= cart.map(function(item){
-    return {
-        ...item, 
-        quantity:
-        Number(item.quantity) || 1
-    };
-})
+// Get the current customer's email
+function getCustomerStorageKey(type) {
+    const email = getCurrentEmail();
+
+    if (!email) {
+        return null;
+    }
+
+    return "zobac" + type + "_" + encodeURIComponent(email);
+}
 
 
-// ==========================
+// ===============================
+// GET SAVED CART
+// ===============================
+
+function loadCustomerCart() {
+
+    const key = getCustomerStorageKey("Cart");
+
+    if (!key) {
+        return [];
+    }
+
+    try {
+        const savedCart = JSON.parse(localStorage.getItem(key)) || [];
+
+        return savedCart.map(function(item) {
+            return {
+                ...item,
+                quantity: Number(item.quantity) || 1
+            };
+        });
+
+    } catch (error) {
+        return [];
+    }
+}
+
+
+// Current customer's cart
+let cart = loadCustomerCart();
+
+
+// ===============================
+// SAVE CART
+// ===============================
+
+function saveCart() {
+
+    const key = getCustomerStorageKey("Cart");
+
+    if (!key) {
+        return;
+    }
+
+    localStorage.setItem(
+        key,
+        JSON.stringify(cart)
+    );
+}
+
+
+// ===============================
 // POPULAR TREATS
-// ==========================
+// ===============================
 
 function showMessage(message) {
     showNotification(message);
 }
 
 
-// ==========================
-// SAVE CART
-// ==========================
-
-function saveCart() {
-    localStorage.setItem("zobacCart", JSON.stringify(cart));
-}
-
-
-// ==========================
+// ===============================
 // ADD TO CART
-// ==========================
+// ===============================
 
 function addToCart(productName, price) {
-const existingItem=cart.find(function(item){
-    return item.name===productName;
-});
-   if(existingItem){existingItem.quantity+=1;
-   } else{
-    cart.push({
-        name: productName,
-        price: price,
-        quantity: 1
+
+    const existingItem = cart.find(function(item) {
+        return item.name === productName;
     });
-}
+
+    if (existingItem) {
+
+        existingItem.quantity += 1;
+
+    } else {
+
+        cart.push({
+            name: productName,
+            price: price,
+            quantity: 1
+        });
+    }
+
     saveCart();
     updateCartCount();
 
-    showNotification(productName + " added to cart! 🛒");
+    showNotification(
+        productName + " added to cart! 🛒"
+    );
 }
+
+
+// ===============================
+// INCREASE QUANTITY
+// ===============================
+
 function increaseQuantity(index) {
-    cart[index].quantity +=1;
-    saveCart();
-    showCart();
-}
-function decreaseQuantity(index) {
-    if (cart[index].quantity>1){
-    cart[index].quantity -=1;}
-    else {
-        cart.splice(index,1);
-    }
+
+    cart[index].quantity += 1;
+
     saveCart();
     showCart();
 }
 
-// ==========================
+
+// ===============================
+// DECREASE QUANTITY
+// ===============================
+
+function decreaseQuantity(index) {
+
+    if (cart[index].quantity > 1) {
+
+        cart[index].quantity -= 1;
+
+    } else {
+
+        cart.splice(index, 1);
+    }
+
+    saveCart();
+    showCart();
+}
+
+
+// ===============================
 // SHOW CART
-// ==========================
+// ===============================
 
 function showCart() {
-    const cartItems = document.getElementById("cartItems");
-    const cartTotal = document.getElementById("cartTotal");
 
-    if (!cartItems || !cartTotal) return;
+    const cartItems =
+        document.getElementById("cartItems");
+
+    const cartTotal =
+        document.getElementById("cartTotal");
+
+    if (!cartItems || !cartTotal) {
+        return;
+    }
 
     cartItems.innerHTML = "";
 
     if (cart.length === 0) {
-        cartItems.innerHTML = "<p>Your cart is empty.</p>";
-        cartTotal.textContent = "Total: ₦0";
+
+        cartItems.innerHTML =
+            "<p>Your cart is empty.</p>";
+
+        cartTotal.textContent =
+            "Total: ₦0";
+
         updateCartCount();
+
         return;
     }
 
@@ -113,7 +197,10 @@ function showCart() {
         if (item.customization) {
 
             // CAKE
-            if (item.customization.theme !== undefined) {
+            if (
+                item.customization.theme !== undefined
+            ) {
+
                 customDetails = `
                     <div class="custom-details">
                         <p>Size: ${item.customization.size}</p>
@@ -124,7 +211,10 @@ function showCart() {
             }
 
             // PIZZA
-            else if (item.customization.crust !== undefined) {
+            else if (
+                item.customization.crust !== undefined
+            ) {
+
                 customDetails = `
                     <div class="custom-details">
                         <p>Size: ${item.customization.size}</p>
@@ -136,7 +226,10 @@ function showCart() {
             }
 
             // SHAWARMA
-            else if (item.customization.hotdogs !== undefined) {
+            else if (
+                item.customization.hotdogs !== undefined
+            ) {
+
                 customDetails = `
                     <div class="custom-details">
                         <p>Size: ${item.customization.size}</p>
@@ -159,11 +252,15 @@ function showCart() {
 
                 ${customDetails}
 
-                <button onclick="decreaseQuantity(${index})">−</button>
+                <button onclick="decreaseQuantity(${index})">
+                    −
+                </button>
 
                 <span>${item.quantity}</span>
 
-                <button onclick="increaseQuantity(${index})">+</button>
+                <button onclick="increaseQuantity(${index})">
+                    +
+                </button>
 
                 <button onclick="removeFromCart(${index})">
                     Remove
@@ -179,9 +276,10 @@ function showCart() {
     updateCartCount();
 }
 
-// ==========================
+
+// ===============================
 // REMOVE FROM CART
-// ==========================
+// ===============================
 
 function removeFromCart(index) {
 
@@ -193,355 +291,604 @@ function removeFromCart(index) {
 }
 
 
-// Show saved cart when cart.html opens
+// ===============================
+// SHOW SAVED CART
+// ===============================
+
 showCart();
 
 
+// ===============================
+// SHOW CHECKOUT
+// ===============================
+
 function showCheckout() {
-    const checkoutItems = document.getElementById("checkoutItems");
-    const checkoutTotal = document.getElementById("checkoutTotal");
-    if(! checkoutItems || !checkoutTotal
-    ) return;
-    checkoutItems.innerHTML="";
-    let total=0;
+
+    const checkoutItems =
+        document.getElementById("checkoutItems");
+
+    const checkoutTotal =
+        document.getElementById("checkoutTotal");
+
+    if (!checkoutItems || !checkoutTotal) {
+        return;
+    }
+
+    checkoutItems.innerHTML = "";
+
+    let total = 0;
+
     cart.forEach(function(item) {
+
         total += item.price * item.quantity;
-        checkoutItems.innerHTML+=
-        `  
+
+        checkoutItems.innerHTML += `
             <p>
-            <strong>${item.name}</strong>
-            <br>
-            ₦${
-                item.price.toLocaleString()} * ${item.quantity}
-                </p>
-            `;
+                <strong>${item.name}</strong>
+                <br>
+                ₦${item.price.toLocaleString()} × ${item.quantity}
+            </p>
+        `;
     });
-    checkoutTotal.textContent= "Total: ₦" + total.toLocaleString();
+
+    checkoutTotal.textContent =
+        "Total: ₦" + total.toLocaleString();
 }
+
 showCheckout();
+
+
+// ===============================
+// CUSTOMER-SPECIFIC ORDERS
+// ===============================
+
+function getCustomerOrders() {
+
+    const key =
+        getCustomerStorageKey("Orders");
+
+    if (!key) {
+        return [];
+    }
+
+    try {
+        return JSON.parse(
+            localStorage.getItem(key)
+        ) || [];
+
+    } catch (error) {
+
+        return [];
+    }
+}
+
+
+function saveCustomerOrders(orders) {
+
+    const key =
+        getCustomerStorageKey("Orders");
+
+    if (!key) {
+        return;
+    }
+
+    localStorage.setItem(
+        key,
+        JSON.stringify(orders)
+    );
+}
+
+
+// ===============================
+// PLACE ORDER
+// ===============================
 
 function placeOrder() {
 
-    const name = document.getElementById("customerName").value;
-    const phone = document.getElementById("customerPhone").value;
-    const address = document.getElementById("customerAddress").value;
-    const date = document.getElementById("deliveryDate").value
-    if (name === "" || phone === "" || address === "" || date ==="") {
-        showNotification("Please fill in all your details.");
+    const name =
+        document.getElementById("customerName").value.trim();
+
+    const phone =
+        document.getElementById("customerPhone").value.trim();
+
+    const address =
+        document.getElementById("customerAddress").value.trim();
+
+    const date =
+        document.getElementById("deliveryDate").value;
+
+
+    if (
+        name === "" ||
+        phone === "" ||
+        address === "" ||
+        date === ""
+    ) {
+
+        showNotification(
+            "Please fill in all your details."
+        );
+
         return;
     }
 
-    const orderMessage = document.getElementById("orderMessage");
 
-    const orderNumber = Math.floor(100000 + Math.random() * 900000);
+    if (cart.length === 0) {
+
+        showNotification(
+            "Your cart is empty."
+        );
+
+        return;
+    }
+
+
+    const orderMessage =
+        document.getElementById("orderMessage");
+
+
+    const orderNumber =
+        Math.floor(
+            100000 + Math.random() * 900000
+        );
+
 
     orderMessage.textContent =
-        "Order placed successfully! 🎉 Order: ZOBAC-" + orderNumber;
+        "Order placed successfully! 🎉 Order: ZOBAC-" +
+        orderNumber;
 
-    orderMessage.style.color = "#6b247f";
-    orderMessage.style.fontWeight = "bold";
+    orderMessage.style.color =
+        "#6b247f";
 
-    document.getElementById("homeAfterOrder").style.display = "inline-block";
-    document.getElementById("viewOrderBtn").style.display="inline-block";
-    const orders = JSON.parse(localStorage.getItem("zobacOrders")) || [];
+    orderMessage.style.fontWeight =
+        "bold";
 
-orders.push({
-    orderNumber: "ZOBAC-" + orderNumber,
-    name: name,
-    phone: phone,
-    address: address,
-    deliveryDate: date,
-    status: "Order Received",
-    items: cart,
-    total: cart.reduce(function(sum, item) {
-        return sum + item.price * item.quantity;
-    }, 0)
-});
 
-localStorage.setItem("zobacOrders", JSON.stringify(orders));
+    document.getElementById(
+        "homeAfterOrder"
+    ).style.display = "inline-block";
 
-cart = [];
 
-saveCart();
+    document.getElementById(
+        "viewOrderBtn"
+    ).style.display = "inline-block";
+
+
+    // Get ONLY this customer's orders
+    const orders =
+        getCustomerOrders();
+
+
+    orders.push({
+
+        orderNumber:
+            "ZOBAC-" + orderNumber,
+
+        name: name,
+
+        phone: phone,
+
+        address: address,
+
+        deliveryDate: date,
+
+        status: "Order Received",
+
+        items: cart,
+
+        total: cart.reduce(
+            function(sum, item) {
+                return sum +
+                    item.price * item.quantity;
+            },
+            0
+        )
+    });
+
+
+    // Save ONLY to this customer's order storage
+    saveCustomerOrders(orders);
+
+
+    // Empty ONLY this customer's cart
     cart = [];
 
     saveCart();
+
+    updateCartCount();
 }
+
+
+// ===============================
+// SHOW ORDERS
+// ===============================
+
 function showOrders() {
-    const ordersList = document.getElementById("ordersList");
 
-    if (!ordersList) return;
+    const ordersList =
+        document.getElementById("ordersList");
 
-    const orders =
-        JSON.parse(localStorage.getItem("zobacOrders")) || [];
-
-    ordersList.innerHTML = "";
-
-    if (orders.length === 0) {
-        ordersList.innerHTML = "<p>No orders yet.</p>";
+    if (!ordersList) {
         return;
     }
 
-    orders.slice().reverse().forEach(function(order) {
 
-        let itemsHTML = "";
+    // Get ONLY current customer's orders
+    const orders =
+        getCustomerOrders();
 
-        order.items.forEach(function(item) {
 
-            let customDetails = "";
+    ordersList.innerHTML = "";
 
-            // CAKE
-            if (
-                item.customization &&
-                item.customization.theme !== undefined
-            ) {
-                customDetails = `
-                    <div class="custom-details">
-                        <p>Size: ${item.customization.size}</p>
-                        <p>Theme: ${item.customization.theme}</p>
-                        <p>Message: ${item.customization.message || "None"}</p>
-                    </div>
-                `;
-            }
 
-            // PIZZA
-            else if (
-                item.customization &&
-                item.customization.crust !== undefined
-            ) {
-                customDetails = `
-                    <div class="custom-details">
-                        <p>Size: ${item.customization.size}</p>
-                        <p>Crust: ${item.customization.crust}</p>
-                        <p>Spice: ${item.customization.spice}</p>
-                        <p>Instructions: ${item.customization.instructions || "None"}</p>
-                    </div>
-                `;
-            }
+    if (orders.length === 0) {
 
-            // SHAWARMA
-            else if (
-                item.customization &&
-                item.customization.hotdogs !== undefined
-            ) {
-                customDetails = `
-                    <div class="custom-details">
-                        <p>Size: ${item.customization.size}</p>
-                        <p>Hotdogs: ${item.customization.hotdogs}</p>
-                        <p>Spice: ${item.customization.spice}</p>
-                        <p>Instructions: ${item.customization.instructions || "None"}</p>
-                    </div>
-                `;
-            }
+        ordersList.innerHTML =
+            "<p>No orders yet.</p>";
 
-            itemsHTML += `
-                <div class="receipt-item">
+        return;
+    }
+
+
+    orders.slice().reverse().forEach(
+        function(order) {
+
+            let itemsHTML = "";
+
+
+            order.items.forEach(
+                function(item) {
+
+                    let customDetails = "";
+
+
+                    // CAKE
+                    if (
+                        item.customization &&
+                        item.customization.theme !== undefined
+                    ) {
+
+                        customDetails = `
+                            <div class="custom-details">
+                                <p>Size: ${item.customization.size}</p>
+                                <p>Theme: ${item.customization.theme}</p>
+                                <p>Message: ${item.customization.message || "None"}</p>
+                            </div>
+                        `;
+                    }
+
+
+                    // PIZZA
+                    else if (
+                        item.customization &&
+                        item.customization.crust !== undefined
+                    ) {
+
+                        customDetails = `
+                            <div class="custom-details">
+                                <p>Size: ${item.customization.size}</p>
+                                <p>Crust: ${item.customization.crust}</p>
+                                <p>Spice: ${item.customization.spice}</p>
+                                <p>Instructions: ${item.customization.instructions || "None"}</p>
+                            </div>
+                        `;
+                    }
+
+
+                    // SHAWARMA
+                    else if (
+                        item.customization &&
+                        item.customization.hotdogs !== undefined
+                    ) {
+
+                        customDetails = `
+                            <div class="custom-details">
+                                <p>Size: ${item.customization.size}</p>
+                                <p>Hotdogs: ${item.customization.hotdogs}</p>
+                                <p>Spice: ${item.customization.spice}</p>
+                                <p>Instructions: ${item.customization.instructions || "None"}</p>
+                            </div>
+                        `;
+                    }
+
+
+                    itemsHTML += `
+                        <div class="receipt-item">
+
+                            <p>
+                                <strong>${item.name}</strong>
+                                × ${item.quantity}
+                            </p>
+
+                            <p>
+                                ₦${(
+                                    item.price *
+                                    item.quantity
+                                ).toLocaleString()}
+                            </p>
+
+                            ${customDetails}
+
+                        </div>
+                    `;
+                }
+            );
+
+
+            ordersList.innerHTML += `
+                <div class="order-card">
+
+                    <h3>
+                        🧾 ${order.orderNumber}
+                    </h3>
 
                     <p>
-                        <strong>${item.name}</strong>
-                        × ${item.quantity}
+                        <strong>Name:</strong>
+                        ${order.name}
                     </p>
 
                     <p>
-                        ₦${(item.price * item.quantity).toLocaleString()}
+                        <strong>Phone:</strong>
+                        ${order.phone}
                     </p>
 
-                    ${customDetails}
+                    <p>
+                        <strong>Address:</strong>
+                        ${order.address}
+                    </p>
+
+                    <p>
+                        <strong>Delivery Date:</strong>
+                        ${order.deliveryDate}
+                    </p>
+
+                    <p>
+                        <strong>Status:</strong>
+
+                        <span class="order-status">
+                            🟠 ${order.status}
+                        </span>
+                    </p>
+
+                    <hr>
+
+                    <h4>Items Purchased</h4>
+
+                    ${itemsHTML}
+
+                    <hr>
+
+                    <p>
+                        <strong>Total:</strong>
+                        ₦${order.total.toLocaleString()}
+                    </p>
+
+                    <button
+                        onclick="deleteOrder('${order.orderNumber}')"
+                    >
+                        Delete Order
+                    </button>
 
                 </div>
             `;
-        });
-
-        ordersList.innerHTML += `
-            <div class="order-card">
-
-                <h3>🧾 ${order.orderNumber}</h3>
-
-                <p>
-                    <strong>Name:</strong> ${order.name}
-                </p>
-
-                <p>
-                    <strong>Phone:</strong> ${order.phone}
-                </p>
-
-                <p>
-                    <strong>Address:</strong> ${order.address}
-                </p>
-
-                <p>
-                    <strong>Delivery Date:</strong> ${order.deliveryDate}
-                </p>
-
-                <p>
-                    <strong>Status:</strong>
-                    <span class="order-status">
-                        🟠 ${order.status}
-                    </span>
-                </p>
-
-                <hr>
-
-                <h4>Items Purchased</h4>
-
-                ${itemsHTML}
-
-                <hr>
-
-                <p>
-                    <strong>Total:</strong>
-                    ₦${order.total.toLocaleString()}
-                </p>
-                <button onclick="deleteOrder('${order.orderNumber}')">Delete Order</button>
-            </div>
-        `;
-    });
+        }
+    );
 }
+
+
 let pendingOrderNumber = null;
 
-function deleteOrder(orderNumber) {
-    pendingOrderNumber = orderNumber;
 
-    const deleteModal = document.getElementById("deleteModal");
+// ===============================
+// DELETE ORDER
+// ===============================
+
+function deleteOrder(orderNumber) {
+
+    pendingOrderNumber =
+        orderNumber;
+
+    const deleteModal =
+        document.getElementById("deleteModal");
 
     if (deleteModal) {
-        deleteModal.style.display = "flex";
+
+        deleteModal.style.display =
+            "flex";
     }
 }
 
-const yesDeleteBtn = document.getElementById("yesDeleteBtn");
-const noDeleteBtn = document.getElementById("noDeleteBtn");
+
+const yesDeleteBtn =
+    document.getElementById("yesDeleteBtn");
+
+const noDeleteBtn =
+    document.getElementById("noDeleteBtn");
+
 
 if (yesDeleteBtn) {
-    yesDeleteBtn.onclick = function() {
-        if (pendingOrderNumber === null) return;
 
-        let orders =
-            JSON.parse(localStorage.getItem("zobacOrders")) || [];
+    yesDeleteBtn.onclick =
+        function() {
 
-        const orderIndex = orders.findIndex(function(order) {
-            return String(order.orderNumber) === String(pendingOrderNumber);
-        });
+            if (
+                pendingOrderNumber === null
+            ) {
+                return;
+            }
 
-        if (orderIndex !== -1) {
-            orders.splice(orderIndex, 1);
 
-            localStorage.setItem(
-                "zobacOrders",
-                JSON.stringify(orders)
-            );
+            // Get ONLY current customer's orders
+            let orders =
+                getCustomerOrders();
 
-            showOrders();
-            showNotification("Order deleted successfully! 🗑️");
-        }
 
-        closeDeleteModal();
-    };
+            const orderIndex =
+                orders.findIndex(
+                    function(order) {
+
+                        return String(
+                            order.orderNumber
+                        ) === String(
+                            pendingOrderNumber
+                        );
+                    }
+                );
+
+
+            if (orderIndex !== -1) {
+
+                orders.splice(
+                    orderIndex,
+                    1
+                );
+
+
+                // Save ONLY current customer's orders
+                saveCustomerOrders(
+                    orders
+                );
+
+
+                showOrders();
+
+                showNotification(
+                    "Order deleted successfully! 🗑️"
+                );
+            }
+
+
+            closeDeleteModal();
+        };
 }
+
 
 if (noDeleteBtn) {
-    noDeleteBtn.onclick = function() {
-        closeDeleteModal();
-    };
+
+    noDeleteBtn.onclick =
+        function() {
+
+            closeDeleteModal();
+        };
 }
+
 
 function closeDeleteModal() {
-    const deleteModal = document.getElementById("deleteModal");
+
+    const deleteModal =
+        document.getElementById("deleteModal");
 
     if (deleteModal) {
-        deleteModal.style.display = "none";
+
+        deleteModal.style.display =
+            "none";
     }
 
-    pendingOrderNumber = null;
+    pendingOrderNumber =
+        null;
 }
+
 
 showOrders();
-// SAVE CUSTOMER ACCOUNT
-const saveAccountBtn = document.getElementById("saveAccountBtn");
 
-if (saveAccountBtn) {
 
-    saveAccountBtn.onclick = function() {
+// ===============================
+// CART COUNT
+// ===============================
 
-        const name = document.getElementById("accountName").readOnly=true;
-        const phone = document.getElementById("accountPhone").readOnly=true;
+function updateCartCount() {
 
-        if (name === "" || phone === "") {
-            showNotification("Please enter your name and phone number.");
-            return;
-        }
+    const cartCount =
+        document.getElementById("cartCount");
 
-        localStorage.setItem("zobacCustomerName", name);
-        localStorage.setItem("zobacCustomerPhone", phone);
+    if (!cartCount) {
+        return;
+    }
 
-        showNotification("Account information saved! 👤");
 
-    };
+    let totalItems = 0;
 
-}
-// SHOW SAVED ACCOUNT INFORMATION
-const savedName = document.getElementById("savedName");
-const savedPhone = document.getElementById("savedPhone");
 
-if (savedName && savedPhone) {
+    cart.forEach(function(item) {
 
-    savedName.textContent =
-        localStorage.getItem("zobacCustomerName") || "Not saved yet";
-
-    savedPhone.textContent =
-        localStorage.getItem("zobacCustomerPhone") || "Not saved yet";
-}
-// EDIT AND SAVE ACCOUNT INFORMATION
-document.addEventListener("DOMContentLoaded", function () {
-    const editBtn = document.getElementById("editAccountBtn");
-    const saveBtn = document.getElementById("saveAccountBtn");
-    const nameInput = document.getElementById("accountName");
-    const phoneInput = document.getElementById("accountPhone");
-
-    if (!editBtn || !saveBtn || !nameInput || !phoneInput) return;
-
-    // Keep fields locked initially
-    nameInput.readOnly = true;
-    phoneInput.readOnly = true;
-    saveBtn.style.display = "none";
-
-    // Click Edit
-    editBtn.addEventListener("click", function () {
-        nameInput.readOnly = false;
-        phoneInput.readOnly = false;
-
-        editBtn.style.display = "none";
-        saveBtn.style.display = "inline-block";
+        totalItems +=
+            item.quantity;
     });
 
-    // Click Save
-    saveBtn.addEventListener("click", function () {
-        const account = JSON.parse(localStorage.getItem("zobacAccount"));
 
-        if (!account) {
-            alert("Account not found. Please register again.");
-            return;
-        }
+    cartCount.textContent =
+        totalItems;
+}
 
-        account.name = nameInput.value.trim();
-        account.phone = phoneInput.value.trim();
 
-        if (!account.name || !account.phone) {
-            showNotification("Please fill in your name and phone number.");
-            return;
-        }
+updateCartCount();
 
-        localStorage.setItem("zobacAccount", JSON.stringify(account));
 
-        nameInput.readOnly = true;
-        phoneInput.readOnly = true;
+// ===============================
+// GO TO CHECKOUT
+// ===============================
 
-        saveBtn.style.display = "none";
-        editBtn.style.display = "inline-block";
+function goToCheckout() {
 
-        showNotification("Your information has been saved!");
-    });
-});
+    if (cart.length === 0) {
+
+        showNotification(
+            "Your cart is empty. Please add an item first."
+        );
+
+        return;
+    }
+
+    window.location.href =
+        "checkout.html";
+}
+
+
+// ===============================
+// NOTIFICATION
+// ===============================
+
+function showNotification(message) {
+
+    let notification =
+        document.getElementById(
+            "notificationBar"
+        );
+
+
+    if (!notification) {
+
+        notification =
+            document.createElement("div");
+
+        notification.id =
+            "notificationBar";
+
+        document.body.appendChild(
+            notification
+        );
+    }
+
+
+    notification.textContent =
+        message;
+
+    notification.classList.add(
+        "show"
+    );
+
+
+    setTimeout(
+        function() {
+
+            notification.classList.remove(
+                "show"
+            );
+
+        },
+        3000
+    );
+}
 //CAKE PRICES AND SIZE
 const cakeSize = document.getElementById("cakeSize");
 const cakePrice = document.getElementById("cakePrice");
@@ -977,145 +1324,527 @@ if (pizzaBtn) {
 
 }
 // ===============================
-// ZOBAC REGISTRATION
+// ZOBAC ACCOUNT SYSTEM
 // ===============================
-document.addEventListener("DOMContentLoaded", function () {
-    const registerBtn = document.getElementById("registerBtn");
 
-    if (registerBtn) {
-        registerBtn.addEventListener("click", function () {
-            const name = document.getElementById("registerName").value.trim();
-            const email = document.getElementById("registerEmail").value.trim().toLowerCase();
-            const phone = document.getElementById("registerPhone").value.trim();
-            const password = document.getElementById("registerPassword").value;
-            const confirmPassword = document.getElementById("confirmPassword").value;
-            const message = document.getElementById("registerMessage");
-
-            if (!name || !email || !phone || !password || !confirmPassword) {
-                message.textContent = "Please fill in all fields.";
-                message.style.color = "red";
-                return;
-            }
-
-            if (password.length < 6) {
-                message.textContent = "Password must be at least 6 characters.";
-                message.style.color = "red";
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                message.textContent = "Passwords do not match.";
-                message.style.color = "red";
-                return;
-            }
-
-            const account = {
-                name: name,
-                email: email,
-                phone: phone,
-                password: password
-            };
-
-            localStorage.setItem("zobacAccount", JSON.stringify(account));
-
-            message.textContent = "Registration successful!";
-            message.style.color = "green";
-
-            setTimeout(function () {
-                window.location.href = "login.html";
-            }, 1000);
-        });
+// Get all registered accounts
+function getZobacAccounts() {
+    try {
+        return JSON.parse(localStorage.getItem("zobacAccounts")) || [];
+    } catch (error) {
+        return [];
     }
+}
+
+
+// Save all registered accounts
+function saveZobacAccounts(accounts) {
+    localStorage.setItem(
+        "zobacAccounts",
+        JSON.stringify(accounts)
+    );
+}
+
+
+// Get the email currently logged in
+function getCurrentEmail() {
+    return (
+        localStorage.getItem("zobacCurrentEmail") || ""
+    ).trim().toLowerCase();
+}
+
+
+// Get the currently logged-in customer's account
+function getCurrentAccount() {
+
+    const email = getCurrentEmail();
+
+    if (!email) {
+        return null;
+    }
+
+    const accounts = getZobacAccounts();
+
+    return accounts.find(function(account) {
+        return (
+            (account.email || "").toLowerCase() === email
+        );
+    }) || null;
+}
+
+
+// ===============================
+// REGISTRATION
+// ===============================
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    const registerBtn =
+        document.getElementById("registerBtn");
+
+    if (!registerBtn) return;
+
+
+    registerBtn.addEventListener("click", function() {
+
+        const name =
+            document.getElementById("registerName").value.trim();
+
+        const email =
+            document.getElementById("registerEmail").value.trim().toLowerCase();
+
+        const phone =
+            document.getElementById("registerPhone").value.trim();
+
+        const password =
+            document.getElementById("registerPassword").value;
+
+        const confirmPassword =
+            document.getElementById("confirmPassword").value;
+
+        const message =
+            document.getElementById("registerMessage");
+
+
+        if (
+            !name ||
+            !email ||
+            !phone ||
+            !password ||
+            !confirmPassword
+        ) {
+            message.textContent =
+                "Please fill in all fields.";
+
+            message.style.color = "red";
+            return;
+        }
+
+
+        if (password.length < 6) {
+
+            message.textContent =
+                "Password must be at least 6 characters.";
+
+            message.style.color = "red";
+            return;
+        }
+
+
+        if (password !== confirmPassword) {
+
+            message.textContent =
+                "Passwords do not match.";
+
+            message.style.color = "red";
+            return;
+        }
+
+
+        const accounts = getZobacAccounts();
+
+
+        // Check this email only
+        const existingAccount =
+            accounts.find(function(account) {
+
+                return (
+                    (account.email || "").toLowerCase() ===
+                    email
+                );
+
+            });
+
+
+        if (existingAccount) {
+
+            message.textContent =
+                "An account with this email already exists.";
+
+            message.style.color = "red";
+            return;
+        }
+
+
+        // Create new account
+        const newAccount = {
+
+            name: name,
+
+            email: email,
+
+            phone: phone,
+
+            password: password
+
+        };
+
+
+        // Add it without deleting other customers
+        accounts.push(newAccount);
+
+
+        saveZobacAccounts(accounts);
+
+
+        message.textContent =
+            "Registration successful!";
+
+        message.style.color = "green";
+
+
+        setTimeout(function() {
+
+            window.location.href =
+                "login.html";
+
+        }, 1000);
+
+    });
+
 });
 
 
 // ===============================
-// LOAD REGISTERED DETAILS
+// LOGIN
 // ===============================
-document.addEventListener("DOMContentLoaded", function () {
-    const account = JSON.parse(localStorage.getItem("zobacAccount"));
 
-    const accountName = document.getElementById("accountName");
-    const accountPhone = document.getElementById("accountPhone");
-    const savedName = document.getElementById("savedName");
-    const savedPhone = document.getElementById("savedPhone");
+document.addEventListener("DOMContentLoaded", function() {
 
-    if (account) {
-        if (accountName) {
-            accountName.value = account.name || "";
-        }
+    const loginBtn =
+        document.getElementById("loginBtn");
 
-        if (accountPhone) {
-            accountPhone.value = account.phone || "";
-        }
+    const emailInput =
+        document.getElementById("loginEmail");
 
-        if (savedName) {
-            savedName.textContent = account.name || "Not saved yet";
-        }
+    const passwordInput =
+        document.getElementById("loginPassword");
 
-        if (savedPhone) {
-            savedPhone.textContent = account.phone || "Not saved yet";
-        }
-    }
-});
+    const message =
+        document.getElementById("loginMessage");
 
 
-document.addEventListener("DOMContentLoaded", function () {
-    const loginBtn = document.getElementById("loginBtn");
-    const emailInput = document.getElementById("loginEmail");
-    const passwordInput = document.getElementById("loginPassword");
-    const message = document.getElementById("loginMessage");
-
-    // Run only on the login page
-    if (!loginBtn || !emailInput || !passwordInput || !message) {
+    if (
+        !loginBtn ||
+        !emailInput ||
+        !passwordInput ||
+        !message
+    ) {
         return;
     }
 
-    loginBtn.addEventListener("click", function (event) {
+
+    // Remember the last email typed
+    const rememberedEmail =
+        localStorage.getItem("zobacLoginEmail");
+
+    if (rememberedEmail) {
+        emailInput.value = rememberedEmail;
+    }
+
+
+    loginBtn.addEventListener("click", function(event) {
+
         event.preventDefault();
 
-        const email = emailInput.value.trim().toLowerCase();
-        const password = passwordInput.value;
+
+        const email =
+            emailInput.value.trim().toLowerCase();
+
+        const password =
+            passwordInput.value;
+
 
         message.textContent = "";
 
-        // Check empty fields
+
         if (!email || !password) {
+
             message.style.color = "red";
-            message.textContent = "Please enter your email and password.";
+
+            message.textContent =
+                "Please enter your email and password.";
+
             return;
         }
 
-        // Get the registered account
-        let account;
 
-        try {
-            account = JSON.parse(localStorage.getItem("zobacAccount"));
-        } catch (error) {
-            account = null;
-        }
+        const accounts = getZobacAccounts();
+
+
+        // Find the account belonging to THIS email
+        const account =
+            accounts.find(function(account) {
+
+                return (
+                    (account.email || "").toLowerCase() ===
+                    email
+                );
+
+            });
+
 
         if (!account) {
+
             message.style.color = "red";
-            message.textContent = "Account not found. Please register first.";
+
+            message.textContent =
+                "Account not found. Please register first.";
+
             return;
         }
 
-        const savedEmail = (account.email || "").trim().toLowerCase();
 
-        // Verify email and password
-        if (email === savedEmail && password === account.password) {
-            localStorage.setItem("zobacLoggedIn", "true");
+        // Check this customer's password
+        if (account.password !== password) {
 
-            message.style.color = "green";
-            message.textContent = "Login successful!";
-
-            window.location.href = "index.html";
-        } else {
             message.style.color = "red";
-            message.textContent = "Incorrect email or password.";
+
+            message.textContent =
+                "Incorrect email or password.";
+
+            return;
         }
+
+
+        // Remember THIS customer
+        localStorage.setItem(
+            "zobacCurrentEmail",
+            email
+        );
+
+
+        // Keep your existing login system working
+        localStorage.setItem(
+            "zobacLoginEmail",
+            email
+        );
+
+        localStorage.setItem(
+            "zobacLoggedIn",
+            "true"
+        );
+
+
+        message.style.color = "green";
+
+        message.textContent =
+            "Login successful!";
+
+
+        setTimeout(function() {
+
+            window.location.href =
+                "index.html";
+
+        }, 500);
+
     });
+
+});
+
+
+// ===============================
+// LOAD CURRENT ACCOUNT
+// ===============================
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    const accountName =
+        document.getElementById("accountName");
+
+    const accountPhone =
+        document.getElementById("accountPhone");
+
+    const savedName =
+        document.getElementById("savedName");
+
+    const savedPhone =
+        document.getElementById("savedPhone");
+
+
+    // Only run on account.html
+    if (
+        !accountName ||
+        !accountPhone ||
+        !savedName ||
+        !savedPhone
+    ) {
+        return;
+    }
+
+
+    const account =
+        getCurrentAccount();
+
+
+    if (!account) {
+
+        accountName.value = "";
+        accountPhone.value = "";
+
+        savedName.textContent =
+            "Not saved yet";
+
+        savedPhone.textContent =
+            "Not saved yet";
+
+        return;
+    }
+
+
+    // Load THIS email's information
+    accountName.value =
+        account.name || "";
+
+    accountPhone.value =
+        account.phone || "";
+
+    savedName.textContent =
+        account.name || "Not saved yet";
+
+    savedPhone.textContent =
+        account.phone || "Not saved yet";
+
+});
+
+
+// ===============================
+// EDIT ACCOUNT INFORMATION
+// ===============================
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    const editBtn =
+        document.getElementById("editAccountBtn");
+
+    const saveBtn =
+        document.getElementById("saveAccountBtn");
+
+    const nameInput =
+        document.getElementById("accountName");
+
+    const phoneInput =
+        document.getElementById("accountPhone");
+
+
+    if (
+        !editBtn ||
+        !saveBtn ||
+        !nameInput ||
+        !phoneInput
+    ) {
+        return;
+    }
+
+
+    nameInput.readOnly = true;
+    phoneInput.readOnly = true;
+
+    saveBtn.style.display = "none";
+
+
+    // EDIT
+    editBtn.addEventListener("click", function() {
+
+        nameInput.readOnly = false;
+        phoneInput.readOnly = false;
+
+        editBtn.style.display = "none";
+        saveBtn.style.display = "inline-block";
+
+    });
+
+
+    // SAVE
+    saveBtn.addEventListener("click", function() {
+
+        const currentEmail =
+            getCurrentEmail();
+
+        if (!currentEmail) {
+
+            showNotification(
+                "Please login first."
+            );
+
+            return;
+        }
+
+
+        const accounts =
+            getZobacAccounts();
+
+
+        const accountIndex =
+            accounts.findIndex(function(account) {
+
+                return (
+                    (account.email || "").toLowerCase() ===
+                    currentEmail
+                );
+
+            });
+
+
+        if (accountIndex === -1) {
+
+            showNotification(
+                "Account not found."
+            );
+
+            return;
+        }
+
+
+        const newName =
+            nameInput.value.trim();
+
+        const newPhone =
+            phoneInput.value.trim();
+
+
+        if (!newName || !newPhone) {
+
+            showNotification(
+                "Please enter your name and phone number."
+            );
+
+            return;
+        }
+
+
+        // Update ONLY this customer's account
+        accounts[accountIndex].name =
+            newName;
+
+        accounts[accountIndex].phone =
+            newPhone;
+
+
+        saveZobacAccounts(accounts);
+
+
+        savedName.textContent =
+            newName;
+
+        savedPhone.textContent =
+            newPhone;
+
+
+        nameInput.readOnly = true;
+        phoneInput.readOnly = true;
+
+        saveBtn.style.display = "none";
+        editBtn.style.display = "inline-block";
+
+
+        showNotification(
+            "Your information has been saved! 👤"
+        );
+
+    });
+
 });
 // ===============================
 // UPDATE NAVBAR LINKS
