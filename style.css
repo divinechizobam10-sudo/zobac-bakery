@@ -1277,6 +1277,25 @@ body:has(#ordersList) {
 }
 
 @media (max-width: 600px) {
+    
+    body {
+    background: linear-gradient(135deg, #6a1b9a, #ab47bc, #f97316);
+    overflow-x: hidden;
+}
+
+.hero {
+    width: calc(100% - 30px);
+    margin: 30px auto;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.hero img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    object-fit: cover;
+}
     .account-card {
         width: 92%;
         padding: 22px 16px;
