@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zobac Bakery- Shop</title>
     <link rel="stylesheet" href="style.css">
-    <script>
-    if (localStorage.getItem("zobacLoggedIn") !== "true") {
-        document.documentElement.classList.add("login-required");
-    }
-</script>
 </head>
 <body class="shop-page">
     <div id="loginPopup" class="login-popup">
@@ -125,6 +120,17 @@
 </div>
 
     <h2>Our Menu</h2>
+<!-- SHOP SEARCH BAR -->
+<div class="shop-search">
+    <input
+        type="search"
+        id="productSearch"
+        placeholder="🔎 Search for bread, cake, pizza..."
+        aria-label="Search bakery products"
+    >
+    <p id="searchMessage" aria-live="polite"></p>
+</div>
+
 
     <div class="menu-container">
 
@@ -140,23 +146,25 @@
         <div class="menu-card">
             <div class="menu-image"><img src="bread3.jpg"></div>
             <h3>Butter Bread</h3>
-            <p>Fresh, soft and delicious butter bread.</p>
+            <p>Fresh, soft and delicious butter bread with 2 different flavours.</p>
             <strong>₦2,000</strong>
 
-            <button onclick="addToCart('Butter Bread', 2000)">
-                Add to Cart
-            </button>
+            <button type="button" class="add-to-cart-btn"
+        data-product="Butter Bread" data-price="2000">
+    Add to Cart
+</button>
         </div>
 
         <div class="menu-card">
             <div class="menu-image"><img src="donut2.jpg"></div>
-            <h3>Glazed Doughnuts</h3>
+            <h3>Doughnuts</h3>
             <p>Fresh doughnuts with a sweet glazed topping.</p>
             <strong>₦500</strong>
 
-            <button onclick="addToCart('Glazed Doughnuts', 500)">
-                Add to Cart
-            </button>
+            <button type="button" class="add-to-cart-btn"
+        data-product="Doughnuts" data-price="500">
+    Add to Cart
+</button>
         </div>
         
         <div class="menu-card">
@@ -164,7 +172,10 @@
             <h3>Wheat Bread</h3>
             <p>A whole wheat bread. Healthy, Zero Sugar and well baked for nice taste</p>
             <strong>₦2,500</strong>
-            <button onclick="addToCart('Wheat Bread', 2500)">Add to Cart</button>
+            <button type="button" class="add-to-cart-btn"
+        data-product="Wheat Bread" data-price="2500">
+    Add to Cart
+</button>
         </div>
         
         <div class="menu-card">
@@ -172,7 +183,10 @@
             <h3>Meat Pie</h3>
             <p>Filled with carrot, potatoes and vegetables to satisfy taste buds.</p>
             <strong>₦1,000</strong>
-            <button onclick="addToCart('Meat Pie', 1000)">Add to Cart</button>
+          <button type="button" class="add-to-cart-btn"
+        data-product="Meat Pie" data-price="1000">
+    Add to Cart
+</button>
             </div>
            
             <div class="menu-card">
@@ -180,15 +194,21 @@
             <h3>Meat Pie-No Sugar</h3>
             <p>Just like a normal Meat Pie but no sugar for eveybody.</p>
             <strong>₦800</strong>
-            <button onclick="addToCart('Meat Pie-No Sugar', 800)">Add to Cart</button>
+           <button type="button" class="add-to-cart-btn"
+        data-product="Meat Pie-No Sugar" data-price="800">
+    Add to Cart
+</button>
             </div>
            
             <div class="menu-card">
             <div class="menu-image"><img src="bread2.jpg"></div>
-            <h3>Special Bread</h3>
-            <p>Butter bread with little delicious suprises inside to increase flavours.</p>
+            <h3>Zobac Deluxe</h3>
+            <p>Special bread with little delicious suprises inside to increase flavours.</p>
             <strong>₦1,500</strong>
-            <button onclick="addToCart('Special Bread', 1500)">Add to Cart</button>
+            <button type="button" class="add-to-cart-btn"
+        data-product="Zobac Deluxe" data-price="1500">
+    Add to Cart
+</button>
             </div>
             
             <div class="menu-card">
@@ -196,21 +216,31 @@
             <h3>Banana Bread</h3>
             <p>Bread with a mixture of banana to make it taste delicious.</p>
             <strong>₦3,000</strong>
-            <button onclick="addToCart('Banana Bread', 3000)">Add to Cart</button>
+            <button type="button" class="add-to-cart-btn"
+        data-product="Banana Bread" data-price="3000">
+    Add to Cart
+</button>
             </div>
             <div class="menu-card">
                 <div class="menu-image"><img src="chin3.jpg"></div>
                 <h3>Chin Chin</h3>
                 <p>Crunchy, tasty and freshly made chin chin</p>
                 <strong>₦1,000</strong>
-                <button onclick="addToCart('Chin Chin', 1000)">Add To Cart</button>
+                <button type="button" class="add-to-cart-btn"
+        data-product="Chin Chin" data-price="1000">
+    Add to Cart
+</button>
             </div>
             <div class="menu-card">
                 <div class="menu-image"><img src="cookies.jpg"></div>
                 <h3>Cookies</h3>
                 <p>Crunchy & freshly baked. Perfect for sweet craving!</p>
                 <strong>₦1,000</strong>
-                <button onclick="addToCart('Cookies', 1000)">Add To Cart</button>
+           
+                <button type="button" class="add-to-cart-btn"
+        data-product="Cookies" data-price="1000">
+    Add to Cart
+</button>
             </div>
             <div class="menu-card">
                 <div class="menu-image"><img src="pizza.jpg"></div>
@@ -231,22 +261,28 @@
                 <h3>Plantain Chips</h3>
                 <p>Crispy, golden and delicious plantain chips made for a crunchy snack!</p>
                 <strong>Jar:₦2,000</strong>
-                <button onclick="addToCart('Plantain Chips', 2000)">Add To Cart</button>
-            </div>
+ <button type="button" class="add-to-cart-btn"
+        data-product="Plantain Chips" data-price="2000">
+    Add to Cart
+</button>            </div>
              <div class="menu-card">
                 <div class="menu-image"><img src="peanut.jpg"></div>
                 <h3>Peanut Burger</h3>
                 <p>Crunchy peanut burgers coated in sweet shell for a delicious bite!</p>
                 <strong>Jar:₦1,000</strong>
-                <button onclick="addToCart('Peanut Burger', 1000)">Add To Cart</button>
-            </div>
+<button type="button" class="add-to-cart-btn"
+        data-product="Peanut Burger" data-price="1000">
+    Add to Cart
+</button>            </div>
              <div class="menu-card">
                 <div class="menu-image"><img src="zobo.jpg"></div>
                 <h3>Zobo</h3>
                 <p>Refreshing and chilled for bursting flavours and a delicious taste!</p>
                 <strong>50CL: ₦500</strong>
-                <button onclick="addToCart('Zobo', 500)">Add To Cart</button>
-            </div>
+<button type="button" class="add-to-cart-btn"
+        data-product="Zobo" data-price="500">
+    Add to Cart
+</button>            </div>
     </div>
     </section>
     <button id="backToTop" style="color: black;">Back to Top</button>

@@ -29,9 +29,76 @@
     </div>
     <h3 id="cartTotal">Total: ₦0 </h3>
     <a href="shop.html"><button>Continue Shopping</button></a>
-    <button id="checkoutBtn" onclick="goToCheckout()" style="background: white; color: #6b247f;" >Checkout</button>
+
+<button
+    type="button"
+    id="checkoutBtn"
+    style="background: white; color: #6b247f;">
+    Checkout
+</button>
     
     <a href="index.html"><button>Back To Home</button></a>
+    <!-- Zobac Bakery Order Notice Popup -->
+<div id="orderNoticePopup" class="order-notice-overlay">
+    <div class="order-notice-box">
+
+        <button type="button" id="closeOrderNotice"
+                class="order-notice-close" aria-label="Close popup">
+            &times;
+        </button>
+
+        <div class="order-notice-icon">🥐</div>
+
+        <h2>Before You Checkout!</h2>
+
+        <p class="order-notice-welcome">
+            Thank you for choosing Zobac Bakery! 💜
+        </p>
+
+        <div class="order-notice-details">
+            <div class="notice-item">
+                <span class="notice-icon">🚚</span>
+                <div>
+                    <h3>Delivery Notice</h3>
+                    <p>Delivery may occasionally be delayed due to traffic, weather, or high order volumes. Thank you for your patience.</p>
+                </div>
+            </div>
+
+            <div class="notice-item">
+                <span class="notice-icon">🍞</span>
+                <div>
+                    <h3>Stock Availability</h3>
+                    <p>All orders depend on available stock. If an item is unavailable, we may contact you about an adjustment.</p>
+                </div>
+            </div>
+
+            <div class="notice-item">
+                <span class="notice-icon">⏰</span>
+                <div>
+                    <h3>Order Processing</h3>
+                    <p>Please allow time for your order to be prepared before dispatch. Check your delivery details carefully.</p>
+                </div>
+            </div>
+        </div>
+
+        <p class="order-notice-footer">
+            Start your day with joy! 💜🧡
+        </p>
+
+        <div class="order-notice-actions">
+            <button type="button" id="cancelOrderNotice"
+                    class="notice-cancel-btn">
+                Back to Cart
+            </button>
+
+            <button type="button" id="continueOrderNotice"
+                    class="notice-continue-btn">
+                Continue to Checkout
+            </button>
+        </div>
+
+    </div>
+</div>
     <script src="script.js"></script>
 </body>
 </html>

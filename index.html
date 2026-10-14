@@ -36,14 +36,15 @@
                     Edit Profile
                 </a>
 
-                <button type="button" id="changePasswordBtn" class="menu-item">
+            <a href="change-password.html" id="changePasswordBtn" class="menu-item">
+                
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#8b5cf6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2"/>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                         <circle cx="12" cy="16" r="1"/>
                     </svg>
                     Change Password
-                </button>
+                            </a>    
 
                 <button type="button" id="settingsBtn" class="menu-item">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#8b5cf6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -98,7 +99,7 @@
     <!-- CLEAR ACCOUNT INFO POPUP -->
 <div id="clearModal" class="account-modal" style="display: none;">
     <div class="account-modal-content">
-        <h2>Clear Account Info</h2>
+       <strong> <h2 style="color: #fff !important;">Clear Account Info</h2></strong>
         <p>Are you sure you want to permanently clear your account information?</p>
 
         <div class="modal-buttons">
@@ -123,13 +124,24 @@
             
         </div>
         <div class="hero-overlay">
-            <img src="logo.jpg" alt="Zobac Bakery Logo" class="hero-logo">
-         <h1>Zobac Bakery</h1>
+
+    <img src="logo.jpg" alt="Zobac Bakery Logo" class="hero-logo">
+
+    <h1>Zobac Bakery</h1>
+
     <p class="slogan">Start your day with joy</p>
-        <h2>Delicious for Every Occasion </h2>
-        <p class="hero-marquee"> 
-            <marquee direction="left" behavior="scroll">Fresh bread, cakes, pastries and Nigerian treats made just for you</marquee></p>
-        </div>
+
+    <div class="hero-divider"></div>
+
+    <h2 style="color: #fff;">Delicious for Every Occasion</h2>
+
+    <p class="hero-marquee">
+        <marquee direction="left" behavior="scroll">
+            Fresh bread, cakes, pastries and Nigerian treats made just for you
+        </marquee>
+    </p>
+
+</div>
         </section>
 <section class="featured">
     <div class="about-content">    <section class="why-zobac">
@@ -203,8 +215,70 @@
     </div>
 
 </div>
+
+<section class="customer-reviews" id="customerReviews">
+    <div class="reviews-heading">
+        <p class="reviews-tagline">MADE WITH LOVE ❤️</p>
+        <h2>What Our Customers Say</h2>
+        <p>Real experiences from customers who have enjoyed Zobac Bakery.</p>
+    </div>
+
+    <!-- Approved customer reviews appear here -->
+    <div id="reviewsList" class="reviews-list">
+        <p class="reviews-loading">Loading customer reviews...</p>
+    </div>
+
+    <!-- Customer review form -->
+    <div class="review-form-card">
+        <h3>Share Your Experience</h3>
+        <p>Enjoyed your order? Tell us what you think!</p>
+
+        <div id="reviewLoginMessage" style="display: none;">
+            <p>Please <a href="login.html">log in</a> to review a delivered order.</p>
+        </div>
+
+        <form id="customerReviewForm" style="display: none;">
+            <label for="reviewOrder">Select a delivered order</label>
+            <select id="reviewOrder" required>
+                <option value="">Choose your order</option>
+            </select>
+
+            <label>Rate your experience</label>
+            <div class="review-stars" id="reviewStars">
+                <button type="button" data-rating="1" aria-label="1 star">★</button>
+                <button type="button" data-rating="2" aria-label="2 stars">★</button>
+                <button type="button" data-rating="3" aria-label="3 stars">★</button>
+                <button type="button" data-rating="4" aria-label="4 stars">★</button>
+                <button type="button" data-rating="5" aria-label="5 stars">★</button>
+            </div>
+
+            <input type="hidden" id="reviewRating" value="0">
+
+            <label for="reviewComment">Your comment</label>
+            <textarea
+                id="reviewComment"
+                rows="4"
+                minlength="3"
+                maxlength="1000"
+                placeholder="Tell us about your experience..."
+                required
+            ></textarea>
+
+            <button type="submit" id="submitReviewBtn">
+                Submit Review
+            </button>
+
+            <p id="reviewFormMessage" role="status"></p>
+        </form>
+
+        <p id="noReviewOrders" style="display: none;">
+            You have no delivered orders available to review right now.
+        </p>
+    </div>
 </section>
+
 <footer class="site-footer">
+
 
     <div class="footer-content">
 

@@ -400,71 +400,82 @@ body{
    CART PAGE
 ========================= */
 
-body:has(#cartItems) {
-    min-height: 100vh;
-    padding: 40px 20px;
+/* CART PAGE LAYOUT */
+.cart-page {
+    padding: 30px 20px;
+    text-align: center;
 }
 
-body:has(#cartItems) h1 {
-    font-size: 38px;
-    margin-bottom: 30px;
+.cart-page h1 {
+    color: #4B2E24;
+    font-size: 36px;
+    margin: 10px 0 30px;
 }
 
+/* CART ITEMS */
 #cartItems {
     width: 100%;
-    max-width: 600px;
+    max-width: 750px;
     margin: 0 auto 25px;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.92);
+}
+
+#cartItems > div {
+    margin-bottom: 15px;
+    padding: 22px;
+    background: rgba(255, 255, 255, 0.96);
     color: #3b174d;
-    border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
-#cartItems p {
-    padding: 15px;
-    margin: 0;
-    border-bottom: 1px solid #ddd;
-    font-weight: bold;
-}
-
-#cartItems p:last-child {
-    border-bottom: none;
-}
-
-#cartItems button {
-    float: right;
-    padding: 7px 12px;
-    border: none;
-    border-radius: 15px;
-    background: #e87532;
-    color: white;
-    cursor: pointer;
-}
-
-#cartItems button:hover {
-    opacity: 0.8;
-}
-
+/* TOTAL */
 #cartTotal {
-    font-size: 24px;
+    color: #4B2E24;
+    font-size: 26px;
     margin: 25px 0;
 }
 
-body:has(#cartItems) a button {
-    padding: 13px 25px;
+/* CART BUTTONS */
+.cart-page button {
+    padding: 12px 24px;
+    margin: 6px;
     border: none;
     border-radius: 25px;
-    background: white;
-    color: #6b247f;
+    background: linear-gradient(135deg, #6b247f, #f07832);
+    color: white;
     font-weight: bold;
     cursor: pointer;
+    transition: 0.3s ease;
 }
 
-body:has(#cartItems) a button:hover {
+.cart-page button:hover {
     transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.18);
 }
 
+/* MOBILE */
+@media (max-width: 600px) {
+    .cart-page {
+        padding: 20px 12px;
+    }
+
+    .cart-page h1 {
+        font-size: 29px;
+    }
+
+    #cartItems > div {
+        padding: 16px 12px;
+    }
+
+    .cart-page button {
+        padding: 11px 16px;
+        margin: 5px 3px;
+    }
+
+    #cartTotal {
+        font-size: 22px;
+    }
+}
 .menu-card img{
     width: 100%;
     height: 180px;
@@ -2068,8 +2079,8 @@ body:not(.shop-page) .nav-links a:hover,
 }
 
 #accountMenuOptions #clearAccountBtn:hover {
-    background: #ffe0e7;
-    color: #a51b43;
+    color: #ffe0e7;
+    background: #dd0d0d;
 }
 
 /* Grid menu toggle */
@@ -3239,4 +3250,872 @@ color: #4b3a50
     color: white;
     font-weight: bold;
     cursor: pointer;
+}
+
+/* SHOP PRODUCT SEARCH */
+.shop-search {
+    width: 90%;
+    max-width: 550px;
+    margin: 25px auto;
+    text-align: center;
+}
+
+.shop-search input {
+    width: 100%;
+    padding: 15px 18px;
+    border: 2px solid #8b5cf6;
+    border-radius: 30px;
+    font-size: 16px;
+    outline: none;
+    box-sizing: border-box;
+    background: #fff;
+    color: #333;
+    box-shadow: 0 4px 12px rgba(107, 36, 127, 0.12);
+}
+
+.shop-search input:focus {
+    border-color: #f07832;
+    box-shadow: 0 0 8px rgba(240, 120, 50, 0.25);
+}
+
+#searchMessage {
+    color: #702bd1;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+
+/* ===== PAYMENT SECTION ===== */
+
+.payment-section {
+    width: calc(100% - 30px);
+    max-width: 620px;
+    margin: 30px auto;
+    padding: 22px;
+    background: #fff;
+    border: 1px solid #eadcf5;
+    border-radius: 16px;
+    box-sizing: border-box;
+}
+
+.payment-section h2 {
+    margin: 0 0 20px;
+    color: #6b247f;
+    font-size: 22px;
+}
+
+/* SEPARATE PAYMENT CARDS */
+
+.payment-card {
+    display: block;
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 0;
+    background: #fff;
+    border: 1px solid #e4d5ef;
+    border-radius: 12px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.payment-card-header {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.payment-option {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 12px;
+    padding: 18px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.payment-option input,
+.bakery-payment-choice input {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: #702bd1;
+}
+
+.payment-option span,
+.bakery-payment-choice > span {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.payment-option strong,
+.bakery-payment-choice strong {
+    color: #6b247f;
+    font-size: 16px;
+}
+
+.payment-option small,
+.bakery-payment-choice small {
+    color: #777;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* DROPDOWN BUTTON */
+
+.dropdown-toggle {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 52px;
+    height: 100%;
+    min-height: 76px;
+    border: none;
+    border-left: 1px solid #eee4f5;
+    background: #faf7ff;
+    color: #6b247f;
+    cursor: pointer;
+}
+
+.dropdown-toggle svg {
+    transition: transform 0.2s ease;
+}
+
+.dropdown-toggle[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+}
+
+/* BANK DETAILS */
+
+#bankTransferDetails {
+    padding: 0 16px 16px;
+}
+
+.bank-details-card {
+    padding: 17px;
+    background: #faf7ff;
+    border: 1px solid #e8dcf2;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.bank-details-card h3 {
+    margin: 0 0 15px;
+    color: #6b247f;
+    font-size: 18px;
+}
+
+.bank-detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #eee4f5;
+    border-radius: 8px;
+}
+
+.bank-detail-row span {
+    color: #777;
+    font-size: 12px;
+}
+
+.bank-detail-row strong {
+    color: #4b2e24;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.transfer-note {
+    margin: 15px 0;
+    color: #666;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* TRANSFER BUTTON */
+
+.transfer-confirm-btn {
+    width: 100%;
+    min-height: 46px;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #702bd1, #f07832);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.transfer-confirm-btn.confirmed {
+    background: #27834a;
+}
+
+#transferButtonMessage,
+#paymentMessage {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+#transferButtonMessage {
+    color: #27834a;
+    text-align: center;
+}
+
+#paymentMessage {
+    color: #b45309;
+}
+
+/* PAY AT THE BAKERY CARD */
+
+.bakery-payment-card {
+    padding: 0;
+    cursor: pointer;
+}
+
+.bakery-payment-choice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 76px;
+    padding: 18px;
+    box-sizing: border-box;
+}
+
+.payment-card:has(input:checked) {
+    border-color: #702bd1;
+    background: #faf7ff;
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+    .payment-section {
+        padding: 16px;
+    }
+
+    .payment-section h2 {
+        font-size: 20px;
+    }
+
+    .payment-option,
+    .bakery-payment-choice {
+        padding: 15px 12px;
+    }
+
+    .dropdown-toggle {
+        width: 44px;
+        min-height: 72px;
+    }
+
+    #bankTransferDetails {
+        padding: 0 10px 12px;
+    }
+
+    .bank-details-card {
+        padding: 13px;
+    }
+}
+
+/* CLOSE BANK DETAILS BUTTON */
+.close-bank-details {
+    display: block;
+    margin: 0 0 12px auto;
+    padding: 8px 14px;
+    border: 1px solid #e5d7ef;
+    border-radius: 8px;
+    background: #fff;
+    color: #6b247f;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.close-bank-details:hover {
+    background: #f5edff;
+    border-color: #702bd1;
+}
+
+#placeOrderBtn {
+    display: block;
+    width: 100%;
+    max-width: 400px;
+    margin: 25px auto;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #702bd1, #f07832);
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(112, 43, 209, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#placeOrderBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(112, 43, 209, 0.35);
+}
+
+#placeOrderBtn:active {
+    transform: scale(0.98);
+}
+
+#placeOrderBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Zobac Bakery order tracking */
+.order-tracking {
+    margin: 20px 0;
+    padding: 16px;
+    background: #faf5ff;
+    border: 1px solid #eadcff;
+    border-radius: 12px;
+}
+
+.order-tracking h4 {
+    margin: 0 0 18px;
+    color: #4B2E24;
+}
+
+.tracking-steps {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.tracking-step {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    color: #888;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+.tracking-dot {
+    width: 30px;
+    height: 30px;
+    margin: 0 auto 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ddd;
+    color: #555;
+    font-weight: bold;
+}
+
+.tracking-step.completed .tracking-dot {
+    background: #7c3aed;
+    color: white;
+}
+
+.tracking-step.active .tracking-dot {
+    background: #f97316;
+    color: white;
+    box-shadow: 0 0 0 4px #fed7aa;
+}
+
+.tracking-step.completed,
+.tracking-step.active {
+    color: #4B2E24;
+    font-weight: bold;
+}
+
+@media (max-width: 480px) {
+    .order-tracking {
+        padding: 12px 8px;
+    }
+
+    .tracking-steps {
+        gap: 3px;
+    }
+
+    .tracking-step {
+        font-size: 9px;
+    }
+
+    .tracking-dot {
+        width: 25px;
+        height: 25px;
+        font-size: 11px;
+    }
+}
+
+
+/* CUSTOMER REVIEW POPUP */
+.review-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 15, 35, 0.75);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    z-index: 10000;
+}
+
+.review-modal-content {
+    position: relative;
+    background: linear-gradient(135deg, #fff7ed, #f3e8ff);
+    width: 100%;
+    max-width: 420px;
+    padding: 30px 22px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3);
+    animation: reviewPopupIn 0.3s ease;
+}
+
+.review-icon {
+    font-size: 42px;
+    margin-bottom: 10px;
+}
+
+.review-modal-content h2 {
+    color: #6b247f;
+    margin-bottom: 12px;
+}
+
+.review-modal-content p {
+    color: #4b2e24;
+    line-height: 1.5;
+}
+
+.close-review-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    border: none;
+    background: transparent;
+    font-size: 30px;
+    color: #4b2e24;
+    cursor: pointer;
+}
+
+.review-stars {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 0 20px;
+}
+
+.review-stars button {
+    border: none;
+    background: transparent;
+    font-size: 35px;
+    color: #c9c0cc;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.review-stars button.selected {
+    color: #f59e0b;
+}
+
+#reviewComment {
+    width: 100%;
+    min-height: 110px;
+    padding: 12px;
+    border: 1px solid #c4a5d4;
+    border-radius: 10px;
+    resize: vertical;
+    box-sizing: border-box;
+    font: inherit;
+}
+
+#submitReviewBtn,
+#skipReviewBtn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#submitReviewBtn {
+    background: #6b247f;
+    color: white;
+}
+
+#skipReviewBtn {
+    background: #eadcf0;
+    color: #4b2e24;
+}
+
+@keyframes reviewPopupIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 480px) {
+    .review-modal-content {
+        padding: 28px 18px;
+    }
+}
+
+/* =====================================
+   HOMEPAGE CUSTOMER REVIEWS
+===================================== */
+
+.customer-reviews {
+    padding: 60px 20px;
+    margin: 35px auto;
+    width: 100%;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, #f5e8ff, #fff0df);
+    text-align: center;
+}
+
+.reviews-heading {
+    max-width: 700px;
+    margin: 0 auto 35px;
+}
+
+.reviews-tagline {
+    color: #8b5cf6;
+    font-weight: bold;
+    letter-spacing: 2px;
+    font-size: 13px;
+}
+
+.reviews-heading h2 {
+    color: #4b2e24;
+    font-size: 30px;
+    margin: 10px 0;
+}
+
+.reviews-heading > p:last-child {
+    color: #654d60;
+    line-height: 1.7;
+}
+
+.reviews-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 22px;
+    max-width: 1100px;
+    margin: 0 auto 40px;
+    text-align: left;
+}
+
+.homepage-review-card {
+    background: #fff;
+    padding: 25px;
+    border-radius: 16px;
+    border: 1px solid #eee0fa;
+    box-shadow: 0 6px 20px rgba(75, 46, 36, 0.09);
+    overflow-wrap: anywhere;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.homepage-review-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(75, 46, 36, 0.14);
+}
+
+.homepage-review-stars {
+    color: #f5a623;
+    font-size: 23px;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
+}
+
+.homepage-review-comment {
+    color: #514451;
+    line-height: 1.8;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+
+.homepage-review-customer {
+    color: #6a1b9a;
+    margin: 20px 0 5px;
+    font-size: 17px;
+}
+
+.homepage-review-verified {
+    color: #777;
+    font-size: 12px;
+    margin: 0;
+}
+
+.reviews-loading {
+    color: #654d60;
+    text-align: center;
+    padding: 20px;
+    grid-column: 1 / -1;
+}
+
+/* Review submission form */
+
+.review-form-card {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 28px;
+    box-sizing: border-box;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(75, 46, 36, 0.09);
+    text-align: left;
+}
+
+.review-form-card h3 {
+    color: #4b2e24;
+    text-align: center;
+    margin-top: 0;
+}
+
+.review-form-card > p {
+    text-align: center;
+    color: #654d60;
+}
+
+.review-form-card label {
+    display: block;
+    margin: 18px 0 8px;
+    font-weight: 600;
+    color: #4b2e24;
+}
+
+.review-form-card select,
+.review-form-card textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #d9c7e5;
+    border-radius: 9px;
+    font: inherit;
+}
+
+.review-form-card textarea {
+    resize: vertical;
+}
+
+.review-form-card #submitReviewBtn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 13px;
+    background: linear-gradient(135deg, #6a1b9a, #ff8c42);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .customer-reviews {
+        padding: 40px 14px;
+    }
+
+    .reviews-heading h2 {
+        font-size: 25px;
+    }
+
+    .reviews-list {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .homepage-review-card {
+        padding: 20px;
+    }
+
+    .review-form-card {
+        padding: 20px 16px;
+    }
+}
+/* Zobac Bakery Order Notice Popup */
+.order-notice-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(28, 12, 35, 0.75);
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.order-notice-overlay.show {
+    display: flex;
+}
+
+.order-notice-box {
+    position: relative;
+    width: 100%;
+    max-width: 490px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: linear-gradient(145deg, #ffffff, #fff5eb);
+    border-radius: 22px;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+    border-top: 6px solid #8e44ad;
+    animation: noticePopupIn 0.3s ease-out;
+}
+
+@keyframes noticePopupIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.order-notice-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    border: none;
+    background: transparent;
+    color: #6b247f;
+    font-size: 30px;
+    cursor: pointer;
+}
+
+.order-notice-icon {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f7a531, #ffcf78);
+    font-size: 35px;
+}
+
+.order-notice-box h2 {
+    color: #6b247f;
+    font-size: 25px;
+    margin: 8px 0 10px;
+}
+
+.order-notice-welcome {
+    color: #674d6d;
+    margin-bottom: 20px;
+}
+
+.order-notice-details {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.notice-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #ffffff;
+    padding: 13px;
+    border-radius: 12px;
+    border: 1px solid #f0dff4;
+}
+
+.notice-icon {
+    font-size: 23px;
+}
+
+.notice-item h3 {
+    color: #6b247f;
+    font-size: 15px;
+    margin: 0 0 5px;
+}
+
+.notice-item p {
+    color: #514653;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.order-notice-footer {
+    color: #8e44ad;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
+.order-notice-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.order-notice-actions button {
+    flex: 1;
+    min-height: 46px;
+    padding: 11px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.order-notice-actions button:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+.notice-cancel-btn {
+    background: #ffffff;
+    color: #6b247f;
+    border: 2px solid #8e44ad;
+}
+
+.notice-continue-btn {
+    background: linear-gradient(135deg, #8e44ad, #e67e22);
+    color: #ffffff;
+    border: none;
+}
+
+@media (max-width: 400px) {
+    .order-notice-box {
+        padding: 25px 15px;
+        border-radius: 17px;
+    }
+
+    .order-notice-box h2 {
+        font-size: 21px;
+    }
+
+    .order-notice-actions {
+        flex-direction: column;
+    }
+
+    .order-notice-actions button {
+        width: 100%;
+        font-size: 14px;
+    }
 }

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zobac Bakery - Admin Dashboard</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+    <header class="admin-header">
+        <div class="admin-brand">
+            <img src="logo.jpg" alt="Zobac Bakery Logo">
+            <div>
+                <h1>Zobac Bakery</h1>
+                <p>Admin Dashboard</p>
+            </div>
+        </div>
+
+        <button id="refreshBtn" class="refresh-btn">
+            Refresh Orders
+        </button>
+    </header>
+
+    <main class="admin-container">
+
+<!-- CUSTOMER REVIEWS BUTTON -->
+<section class="admin-reviews-section">
+
+    <button
+        type="button"
+        id="toggleReviewsBtn"
+        class="toggle-reviews-btn"
+        aria-expanded="false"
+        aria-controls="adminReviewsContent"
+    >
+        ⭐ Customer Reviews <span id="reviewsToggleIcon">＋</span>
+    </button>
+
+    <div id="adminReviewsContent" hidden>
+        <p>Review customer feedback and approve or reject submissions.</p>
+
+        <div class="review-admin-filters">
+            <label for="reviewStatusFilter">Filter Reviews:</label>
+
+            <select id="reviewStatusFilter">
+                <option value="">All Reviews</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+            </select>
+
+            <button type="button" id="refreshReviewsBtn">
+                Refresh Reviews
+            </button>
+        </div>
+
+        <p id="adminReviewsMessage">Reviews will appear here.</p>
+
+        <div id="adminReviewsList" class="admin-reviews-list"></div>
+    </div>
+
+</section>
+       
+<section class="welcome-section">
+    <h2>Welcome, Admin!</h2>
+    <p>Manage your bakery orders in one place.</p>
+</section>
+
+<section class="stats-grid">
+    <div class="stat-card">
+        <h3>Total Orders</h3>
+        <p id="totalOrders">0</p>
+    </div>
+
+    <div class="stat-card">
+        <h3>Pending Orders</h3>
+        <p id="pendingOrders">0</p>
+    </div>
+
+    <div class="stat-card">
+        <h3>Preparing</h3>
+        <p id="preparingOrders">0</p>
+    </div>
+
+    <div class="stat-card">
+        <h3>Delivered</h3>
+        <p id="deliveredOrders">0</p>
+    </div>
+
+    <div class="stat-card">
+        <h3>Total Sales</h3>
+        <p id="totalSales">₦0</p>
+    </div>
+
+    <div class="stat-card">
+        <h3>Pending Payments</h3>
+        <p id="pendingPayments">₦0</p>
+    </div>
+    
+<div class="stat-card">
+    <h3>Today's Sales</h3>
+    <p id="todaySales">₦0</p>
+</div>
+
+<div class="stat-card">
+    <h3>This Month's Sales</h3>
+    <p id="monthlySales">₦0</p>
+</div>
+
+</section>
+
+<section class="weekly-sales-section">
+    <h2>Sales Overview — Last 7 Days</h2>
+    <p>Daily revenue from confirmed payments</p>
+    <div id="weeklySalesChart" class="weekly-sales-chart">
+        Loading sales chart...
+    </div>
+</section>
+
+<section class="orders-section">
+    <h2>Customer Orders</h2>
+    
+<div class="order-filters">
+    <select id="statusFilter">
+        <option value="">All Order Statuses</option>
+        <option value="Order Received">Order Received</option>
+        <option value="Preparing">Preparing</option>
+        <option value="Out for Delivery">Out for Delivery</option>
+        <option value="Delivered">Delivered</option>
+    </select>
+
+    <select id="paymentFilter">
+        <option value="">All Payment Statuses</option>
+        <option value="Pending">Pending Payment</option>
+        <option value="Payment Confirmed">Payment Confirmed</option>
+    </select>
+
+    <input type="date" id="dateFilter">
+
+    <button type="button" id="clearFilters">
+        Clear Filters
+    </button>
+</div>
+
+    <div id="ordersMessage">
+        Loading orders...
+    </div>
+
+    <div class="order-search">
+        <label for="orderSearch">Search Order ID</label>
+
+        <div class="order-search-box">
+            <input
+                type="search"
+                id="orderSearch"
+                placeholder="Enter order ID, e.g. ZOBAC-123456"
+                autocomplete="off"
+            >
+
+            <button type="button" id="clearOrderSearch">
+                Clear
+            </button>
+        </div>
+
+        <p id="searchMessage"></p>
+    </div>
+
+    <div class="orders-table-wrapper">
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Phone</th>
+                    <th>Delivery Address</th>
+                    <th>Products Bought</th>
+                    <th>Delivery Date</th>
+                    <th>Payment Method</th>
+                    <th>Payment Status</th>
+                    <th>Order Status</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody id="ordersTable">
+                <tr>
+                    <td colspan="11">Loading orders...</td>
+                </tr>
+            </tbody>
+        </table>
+      </div>
+
+</section>
+
+<!-- INVENTORY MANAGEMENT -->
+<section class="inventory-section">
+    <h2>📦 Inventory Management</h2>
+    <p>Manage available products, monitor stock, and restock your bakery items.</p>
+
+    <div class="inventory-summary">
+        <div class="inventory-stat-card">
+            <h3>Total Products</h3>
+            <p id="inventoryTotalProducts">0</p>
+        </div>
+
+        <div class="inventory-stat-card">
+            <h3>Low Stock Items</h3>
+            <p id="inventoryLowStock">0</p>
+        </div>
+
+        <div class="inventory-stat-card">
+            <h3>Out of Stock</h3>
+            <p id="inventoryOutOfStock">0</p>
+        </div>
+    </div>
+
+    <div class="inventory-form-wrapper">
+        <h3>Add New Inventory Item</h3>
+
+        <form id="inventoryForm">
+            <label for="inventoryName">Product Name</label>
+            <input
+                type="text"
+                id="inventoryName"
+                placeholder="e.g. Butter Bread"
+                required
+            >
+
+            <label for="inventoryCategory">Category</label>
+            <select id="inventoryCategory" required>
+                <option value="Bread">Bread</option>
+                <option value="Cakes">Cakes</option>
+                <option value="Pastries">Pastries</option>
+                <option value="Snacks">Snacks</option>
+                <option value="Drinks">Drinks</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label for="inventoryQuantity">Available Quantity</label>
+            <input
+                type="number"
+                id="inventoryQuantity"
+                min="0"
+                step="1"
+                placeholder="e.g. 20"
+                required
+            >
+
+            <label for="inventoryThreshold">Low Stock Warning Level</label>
+            <input
+                type="number"
+                id="inventoryThreshold"
+                min="0"
+                step="1"
+                value="5"
+                required
+            >
+
+            <button type="submit">Add Inventory Item</button>
+        </form>
+
+        <p id="inventoryMessage" role="status"></p>
+    </div>
+
+    <div class="inventory-table-wrapper">
+        <h3>Current Stock</h3>
+
+        <button type="button" id="refreshInventoryBtn">
+            Refresh Inventory
+        </button>
+
+        <div id="inventoryTableMessage">Loading inventory...</div>
+
+        <table class="inventory-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Available Stock</th>
+                    <th>Stock Status</th>
+                    <th>Low Stock Level</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody id="inventoryTable">
+                <tr>
+                    <td colspan="6">Loading inventory...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+</main>
+
+    
+<div id="receiptModal" class="receipt-modal" style="display: none;">
+    <div class="receipt-content">
+        <button type="button" id="closeReceipt" class="close-receipt">
+            &times;
+        </button>
+
+        <h2>Zobac Bakery</h2>
+        <p>Start your day with joy!</p>
+
+        <h3>Order Receipt</h3>
+
+        <div id="receiptDetails"></div>
+
+        <button type="button" id="printReceipt">Print Receipt</button>
+    </div>
+</div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

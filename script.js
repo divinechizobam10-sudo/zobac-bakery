@@ -1,19 +1,53 @@
+
 // CHECK LOGIN STATUS
-document.addEventListener("DOMContentLoaded", function () {
-    const isLoggedIn =
-        localStorage.getItem("zobacLoggedIn") === "true";
-   
+document.addEventListener("DOMContentLoaded", async function () {
     const loginBtn = document.getElementById("loginBtn");
     const accountMenu = document.querySelector(".account-menu");
 
+    // Hide account controls until the server confirms login.
     if (loginBtn) {
-        loginBtn.style.display = isLoggedIn ? "none" : "inline-block";
+        loginBtn.style.display = "none";
     }
 
     if (accountMenu) {
-        accountMenu.style.display = isLoggedIn ? "inline-block" : "none";
+        accountMenu.style.display = "none";
+    }
+
+    try {
+        const response = await fetch("/api/customer/session", {
+            credentials: "same-origin"
+        });
+
+        if (!response.ok) {
+            throw new Error("Could not check login status.");
+        }
+
+        const result = await response.json();
+        const isLoggedIn = result.authenticated === true;
+
+        console.log("Login status:", isLoggedIn);
+
+        if (loginBtn) {
+            loginBtn.style.display = isLoggedIn
+                ? "none"
+                : "inline-block";
+        }
+
+        if (accountMenu) {
+            accountMenu.style.display = isLoggedIn
+                ? "inline-block"
+                : "none";
+        }
+
+    } catch (error) {
+        console.error("Could not check login status:", error);
+
+        if (loginBtn) {
+            loginBtn.style.display = "inline-block";
+        }
     }
 });
+
 // ===============================
 // CUSTOMER-SPECIFIC CART SYSTEM
 // ===============================
@@ -45,7 +79,7 @@ function loadCustomerCart() {
     try {
         const savedCart = JSON.parse(localStorage.getItem(key)) || [];
 
-        return savedCart.map(function(item) {
+        return savedCart.map(function (item) {
             return {
                 ...item,
                 quantity: Number(item.quantity) || 1
@@ -96,7 +130,7 @@ function showMessage(message) {
 
 function addToCart(productName, price) {
 
-    const existingItem = cart.find(function(item) {
+    const existingItem = cart.find(function (item) {
         return item.name === productName;
     });
 
@@ -159,13 +193,10 @@ function decreaseQuantity(index) {
 // SHOW CART
 // ===============================
 
+
 function showCart() {
-
-    const cartItems =
-        document.getElementById("cartItems");
-
-    const cartTotal =
-        document.getElementById("cartTotal");
+    const cartItems = document.getElementById("cartItems");
+    const cartTotal = document.getElementById("cartTotal");
 
     if (!cartItems || !cartTotal) {
         return;
@@ -174,33 +205,22 @@ function showCart() {
     cartItems.innerHTML = "";
 
     if (cart.length === 0) {
-
-        cartItems.innerHTML =
-            "<p>Your cart is empty.</p>";
-
-        cartTotal.textContent =
-            "Total: ₦0";
-
+        cartItems.innerHTML = "<p>Your cart is empty.</p>";
+        cartTotal.textContent = "Total: ₦0";
         updateCartCount();
-
         return;
     }
 
     let total = 0;
 
-    cart.forEach(function(item, index) {
-
+    cart.forEach(function (item, index) {
         total += item.price * item.quantity;
 
         let customDetails = "";
 
         if (item.customization) {
-
             // CAKE
-            if (
-                item.customization.theme !== undefined
-            ) {
-
+            if (item.customization.theme !== undefined) {
                 customDetails = `
                     <div class="custom-details">
                         <p>Size: ${item.customization.size}</p>
@@ -211,10 +231,7 @@ function showCart() {
             }
 
             // PIZZA
-            else if (
-                item.customization.crust !== undefined
-            ) {
-
+            else if (item.customization.crust !== undefined) {
                 customDetails = `
                     <div class="custom-details">
                         <p>Size: ${item.customization.size}</p>
@@ -226,10 +243,7 @@ function showCart() {
             }
 
             // SHAWARMA
-            else if (
-                item.customization.hotdogs !== undefined
-            ) {
-
+            else if (item.customization.hotdogs !== undefined) {
                 customDetails = `
                     <div class="custom-details">
                         <p>Size: ${item.customization.size}</p>
@@ -243,7 +257,6 @@ function showCart() {
 
         cartItems.innerHTML += `
             <div class="cart-item">
-
                 <p>
                     <strong>${item.name}</strong>
                     <br>
@@ -252,29 +265,47 @@ function showCart() {
 
                 ${customDetails}
 
-                <button onclick="decreaseQuantity(${index})">
+                <button type="button" class="cart-action-btn"
+                    data-action="decrease" data-index="${index}">
                     −
                 </button>
 
                 <span>${item.quantity}</span>
 
-                <button onclick="increaseQuantity(${index})">
+                <button type="button" class="cart-action-btn"
+                    data-action="increase" data-index="${index}">
                     +
                 </button>
 
-                <button onclick="removeFromCart(${index})">
+                <button type="button" class="cart-action-btn"
+                    data-action="remove" data-index="${index}">
                     Remove
                 </button>
-
             </div>
         `;
     });
 
-    cartTotal.textContent =
-        "Total: ₦" + total.toLocaleString();
+    cartTotal.textContent = "Total: ₦" + total.toLocaleString();
+
+    // Connect buttons without inline JavaScript
+    cartItems.querySelectorAll(".cart-action-btn").forEach(function (button) {
+        button.addEventListener("click", function () {
+            const index = Number(button.dataset.index);
+            const action = button.dataset.action;
+
+            if (action === "decrease") {
+                decreaseQuantity(index);
+            } else if (action === "increase") {
+                increaseQuantity(index);
+            } else if (action === "remove") {
+                removeFromCart(index);
+            }
+        });
+    });
 
     updateCartCount();
 }
+
 
 
 // ===============================
@@ -318,7 +349,7 @@ function showCheckout() {
 
     let total = 0;
 
-    cart.forEach(function(item) {
+    cart.forEach(function (item) {
 
         total += item.price * item.quantity;
 
@@ -342,24 +373,15 @@ showCheckout();
 // CUSTOMER-SPECIFIC ORDERS
 // ===============================
 
-function getCustomerOrders() {
 
-    const key =
-        getCustomerStorageKey("Orders");
+function saveCustomerOrders(orders) {
+    const key = getCustomerStorageKey("Orders");
 
     if (!key) {
-        return [];
+        return;
     }
 
-    try {
-        return JSON.parse(
-            localStorage.getItem(key)
-        ) || [];
-
-    } catch (error) {
-
-        return [];
-    }
+    localStorage.setItem(key, JSON.stringify(orders));
 }
 
 
@@ -383,127 +405,502 @@ function saveCustomerOrders(orders) {
 // PLACE ORDER
 // ===============================
 
-function placeOrder() {
+function getCustomerOrders() {
+    const key = getCustomerStorageKey("Orders");
 
-    const name =
-        document.getElementById("customerName").value.trim();
+    if (!key) {
+        return [];
+    }
 
-    const phone =
-        document.getElementById("customerPhone").value.trim();
+    try {
+        return JSON.parse(localStorage.getItem(key)) || [];
+    } catch (error) {
+        return [];
+    }
+}
 
-    const address =
-        document.getElementById("customerAddress").value.trim();
+async function placeOrder() {
+    const name = document.getElementById("customerName").value.trim();
+    const phone = document.getElementById("customerPhone").value.trim();
+    const address = document.getElementById("customerAddress").value.trim();
+    const date = document.getElementById("deliveryDate").value;
 
-    const date =
-        document.getElementById("deliveryDate").value;
+    const selectedPayment = document.querySelector(
+        'input[name="paymentMethod"]:checked'
+    );
 
+    if (!selectedPayment) {
+        document.getElementById("paymentMessage").textContent =
+            "Please choose a payment method.";
+        return;
+    }
+
+    const paymentMethod = selectedPayment.value;
 
     if (
-        name === "" ||
-        phone === "" ||
-        address === "" ||
-        date === ""
+        paymentMethod === "Bank Transfer" &&
+        document.getElementById("transferConfirmation").dataset.confirmed !== "true"
     ) {
-
-        showNotification(
-            "Please fill in all your details."
-        );
-
+        document.getElementById("paymentMessage").textContent =
+            "Please click I've Done the Transfer before placing your order.";
         return;
+    }
+
+
+
+    /* =================================
+       ZOBAC BAKERY PAYMENT SECTION
+    ================================= */
+
+    const paymentRadios = document.querySelectorAll(
+        'input[name="paymentMethod"]'
+    );
+
+    const bankDetails = document.getElementById("bankTransferDetails");
+    const bankDropdownBtn = document.getElementById("bankDropdownBtn");
+    const closeBankDetails = document.getElementById("closeBankDetails");
+    const transferButton = document.getElementById("transferConfirmation");
+    const transferMessage = document.getElementById("transferButtonMessage");
+    const paymentMessage = document.getElementById("paymentMessage");
+
+
+    /* OPEN AND CLOSE BANK DETAILS */
+
+    function setBankDropdown(open) {
+        if (!bankDetails || !bankDropdownBtn) return;
+
+        bankDetails.hidden = !open;
+
+        bankDropdownBtn.setAttribute(
+            "aria-expanded",
+            String(open)
+        );
+    }
+
+
+    /* BANK DROPDOWN BUTTON */
+
+
+    const bankArrow = document.getElementById("bankDropdownBtn");
+
+    if (bankArrow) {
+        bankArrow.onclick = function () {
+            const bankDetails =
+                document.getElementById("bankTransferDetails");
+
+            if (!bankDetails) return;
+
+            const isOpen =
+                !bankDetails.hidden &&
+                bankDetails.style.display !== "none";
+
+            if (isOpen) {
+                bankDetails.hidden = true;
+                bankDetails.style.display = "none";
+                bankArrow.setAttribute("aria-expanded", "false");
+            } else {
+                bankDetails.hidden = false;
+                bankDetails.style.display = "block";
+                bankArrow.setAttribute("aria-expanded", "true");
+
+                const bankRadio = document.querySelector(
+                    'input[name="paymentMethod"][value="Bank Transfer"]'
+                );
+
+                if (bankRadio) {
+                    bankRadio.checked = true;
+                }
+            }
+        };
+    }
+
+
+
+    /* CLOSE BANK DETAILS BUTTON */
+
+    if (closeBankDetails) {
+        closeBankDetails.addEventListener("click", function () {
+            setBankDropdown(false);
+        });
+    }
+
+
+    /* WHEN PAYMENT METHOD CHANGES */
+
+    paymentRadios.forEach(function (radio) {
+
+        radio.addEventListener("change", function () {
+
+            if (this.value === "Bank Transfer") {
+                setBankDropdown(true);
+            } else {
+                setBankDropdown(false);
+            }
+
+            // Reset transfer confirmation.
+            if (transferButton) {
+                transferButton.dataset.confirmed = "false";
+                transferButton.textContent = "I've Done the Transfer";
+                transferButton.classList.remove("confirmed");
+            }
+
+            if (transferMessage) {
+                transferMessage.textContent = "";
+            }
+
+            if (paymentMessage) {
+                paymentMessage.textContent = "";
+            }
+
+        });
+
+    });
+
+
+    /* I'VE DONE THE TRANSFER BUTTON */
+
+    if (transferButton) {
+
+        transferButton.addEventListener("click", function () {
+
+            const selectedPayment = document.querySelector(
+                'input[name="paymentMethod"]:checked'
+            );
+
+            if (
+                !selectedPayment ||
+                selectedPayment.value !== "Bank Transfer"
+            ) {
+                if (paymentMessage) {
+                    paymentMessage.textContent =
+                        "Please select Bank Transfer first.";
+                }
+
+                return;
+            }
+
+            this.dataset.confirmed = "true";
+
+            this.textContent =
+                "✓ Transfer Confirmation Submitted";
+
+            this.classList.add("confirmed");
+
+            if (transferMessage) {
+                transferMessage.textContent =
+                    "Your payment still needs to be verified by the bakery.";
+            }
+
+            if (paymentMessage) {
+                paymentMessage.textContent = "";
+            }
+
+        });
+
     }
 
 
     if (cart.length === 0) {
-
-        showNotification(
-            "Your cart is empty."
-        );
-
+        showNotification("Your cart is empty.");
         return;
     }
 
-
-    const orderMessage =
-        document.getElementById("orderMessage");
-
+    const total = cart.reduce(function (sum, item) {
+        return sum + item.price * item.quantity;
+    }, 0);
 
     const orderNumber =
-        Math.floor(
-            100000 + Math.random() * 900000
-        );
+        "ZOBAC-" + Math.floor(100000 + Math.random() * 900000);
 
+    const orderItems = cart.map(function (item) {
+        return { ...item };
+    });
 
-    orderMessage.textContent =
-        "Order placed successfully! 🎉 Order: ZOBAC-" +
-        orderNumber;
-
-    orderMessage.style.color =
-        "#6b247f";
-
-    orderMessage.style.fontWeight =
-        "bold";
-
-
-    document.getElementById(
-        "homeAfterOrder"
-    ).style.display = "inline-block";
-
-
-    document.getElementById(
-        "viewOrderBtn"
-    ).style.display = "inline-block";
-
-
-    // Get ONLY this customer's orders
-    const orders =
-        getCustomerOrders();
-
-
-    orders.push({
-
-        orderNumber:
-            "ZOBAC-" + orderNumber,
-
+    const newOrder = {
+        orderNumber: orderNumber,
         name: name,
-
         phone: phone,
-
+        email: getCurrentEmail(),
         address: address,
-
         deliveryDate: date,
-
         status: "Order Received",
+        paymentMethod: paymentMethod,
+        paymentStatus: "Payment Pending",
+        items: orderItems,
+        total: total
+    };
 
-        items: cart,
+    const orders = getCustomerOrders();
+    orders.push(newOrder);
+    saveCustomerOrders(orders);
 
-        total: cart.reduce(
-            function(sum, item) {
-                return sum +
-                    item.price * item.quantity;
+    placeOrderBtn.disabled = true;
+    placeOrderBtn.textContent = "Submitting Order...";
+
+    try {
+        const response = await fetch("/api/orders", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
             },
-            0
-        )
+            body: JSON.stringify({
+                orderNumber: orderNumber,
+                email: getCurrentEmail(),
+                name: name,
+                phone: phone,
+                address: address,
+                deliveryDate: date,
+                items: orderItems,
+                total: total,
+                paymentMethod: paymentMethod,
+                paymentStatus: "Payment Pending"
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || "Order submission failed.");
+        }
+
+        // Empty the cart only after the backend accepts the order.
+        cart = [];
+        saveCart();
+        updateCartCount();
+
+        document.getElementById("homeAfterOrder").style.display =
+            "inline-block";
+
+        document.getElementById("viewOrderBtn").style.display =
+            "inline-block";
+
+        orderMessage.textContent =
+            "Order placed successfully! Order: " + orderNumber +
+            ". Payment is pending confirmation.";
+
+        orderMessage.style.color = "#6b247f";
+        orderMessage.style.fontWeight = "bold";
+
+        paymentMessage.textContent =
+            paymentMethod === "Bank Transfer"
+                ? "Your transfer will be verified manually by Zobac Bakery."
+                : "Please pay at the bakery. Your payment is still pending.";
+
+    } catch (error) {
+        console.error("Order submission error:", error);
+
+        // Remove the unsent order from local storage.
+        const savedOrders = getCustomerOrders().filter(
+            order => order.orderNumber !== orderNumber
+        );
+        saveCustomerOrders(savedOrders);
+
+        orderMessage.textContent =
+            "We couldn't submit your order to the bakery. " +
+            "Please try again. Your cart has been kept.";
+
+        orderMessage.style.color = "#b45309";
+        orderMessage.style.fontWeight = "bold";
+
+    } finally {
+        placeOrderBtn.disabled = false;
+        placeOrderBtn.textContent = "Place Order";
+    }
+}
+
+const bankArrow = document.getElementById("bankDropdownBtn");
+
+if (bankArrow) {
+    bankArrow.onclick = function () {
+        const details = document.getElementById("bankTransferDetails");
+
+        if (!details) return;
+
+        const isOpen =
+            !details.hidden &&
+            details.style.display !== "none";
+
+        details.hidden = isOpen;
+        details.style.display = isOpen ? "none" : "block";
+
+        this.setAttribute("aria-expanded", String(!isOpen));
+
+        if (!isOpen) {
+            const bankRadio = document.querySelector(
+                'input[name="paymentMethod"][value="Bank Transfer"]'
+            );
+
+            if (bankRadio) {
+                bankRadio.checked = true;
+            }
+        }
+    };
+}
+
+const closeBankButton = document.getElementById("closeBankDetails");
+
+if (closeBankButton) {
+    closeBankButton.onclick = function () {
+        const bankDetails = document.getElementById("bankTransferDetails");
+        const bankDropdownBtn = document.getElementById("bankDropdownBtn");
+
+        if (bankDetails) {
+            bankDetails.hidden = true;
+            bankDetails.style.display = "none";
+        }
+
+        if (bankDropdownBtn) {
+            bankDropdownBtn.setAttribute("aria-expanded", "false");
+        }
+    };
+}
+
+const transferButton = document.getElementById("transferConfirmation");
+const transferMessage = document.getElementById("transferButtonMessage");
+
+if (transferButton) {
+    transferButton.addEventListener("click", function () {
+
+
+
+        function setBankDropdown(open) {
+            const bankDetails = document.getElementById("bankTransferDetails");
+            const bankDropdownBtn = document.getElementById("bankDropdownBtn");
+
+            if (!bankDetails || !bankDropdownBtn) return;
+
+            bankDetails.hidden = !open;
+            bankDetails.style.display = open ? "block" : "none";
+
+            bankDropdownBtn.setAttribute(
+                "aria-expanded",
+                String(open)
+            );
+        }
+
+
+
+
+
+
+
+
+
+
+        const transferButton = document.getElementById("transferConfirmation");
+        const transferMessage = document.getElementById("transferButtonMessage");
+
+        if (transferButton) {
+            transferButton.addEventListener("click", function () {
+                const selectedPayment = document.querySelector(
+                    'input[name="paymentMethod"]:checked'
+                );
+
+                if (!selectedPayment || selectedPayment.value !== "Bank Transfer") {
+                    const paymentMessage = document.getElementById("paymentMessage");
+
+                    if (paymentMessage) {
+                        paymentMessage.textContent =
+                            "Please select Bank Transfer first.";
+                    }
+                    return;
+                }
+
+                this.dataset.confirmed = "true";
+                this.textContent = "✓ Transfer Confirmation Submitted";
+                this.classList.add("confirmed");
+
+                if (transferMessage) {
+                    transferMessage.textContent =
+                        "Your payment still needs to be verified by the bakery.";
+                }
+            });
+        }
+
+    });
+
+}
+// Show bank details only when Bank Transfer is selected.
+document.querySelectorAll('input[name="paymentMethod"]').forEach(
+    function (input) {
+        input.addEventListener("change", function () {
+            const details = document.getElementById("bankTransferDetails");
+
+            details.style.display =
+                this.value === "Bank Transfer" ? "block" : "none";
+
+            document.getElementById("paymentMessage").textContent = "";
+        }
+        );
     });
 
 
-    // Save ONLY to this customer's order storage
-    saveCustomerOrders(orders);
 
-
-    // Empty ONLY this customer's cart
-    cart = [];
-
-    saveCart();
-
-    updateCartCount();
-}
 
 
 // ===============================
 // SHOW ORDERS
 // ===============================
 
-function showOrders() {
+
+
+async function syncCustomerOrderStatuses() {
+    try {
+        // Get only the orders belonging to the logged-in customer.
+        const response = await fetch("/api/customer/orders", {
+            credentials: "same-origin"
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const customerServerOrders = await response.json();
+        const email = getCurrentEmail();
+
+        if (!email) {
+            return;
+        }
+
+        const localOrders = getCustomerOrders();
+
+        customerServerOrders.forEach(serverOrder => {
+            const existingOrder = localOrders.find(
+                order =>
+                    order.orderNumber === serverOrder.orderNumber
+            );
+
+            if (existingOrder) {
+                // Update the order's progress.
+                existingOrder.status = serverOrder.status;
+
+                // Update its payment status.
+                existingOrder.paymentStatus =
+                    serverOrder.paymentStatus ||
+                    existingOrder.paymentStatus;
+
+                // Update its payment method when available.
+                if (serverOrder.paymentMethod) {
+                    existingOrder.paymentMethod =
+                        serverOrder.paymentMethod;
+                }
+            } else {
+                // Add an order that is missing from local storage.
+                localOrders.push(serverOrder);
+            }
+        });
+
+        saveCustomerOrders(localOrders);
+
+    } catch (error) {
+        console.error(
+            "Could not sync order statuses:",
+            error
+        );
+    }
+}
+
+async function showOrders() {
 
     const ordersList =
         document.getElementById("ordersList");
@@ -511,7 +908,7 @@ function showOrders() {
     if (!ordersList) {
         return;
     }
-
+    await syncCustomerOrderStatuses();
 
     // Get ONLY current customer's orders
     const orders =
@@ -531,13 +928,13 @@ function showOrders() {
 
 
     orders.slice().reverse().forEach(
-        function(order) {
+        function (order) {
 
             let itemsHTML = "";
 
 
             order.items.forEach(
-                function(item) {
+                function (item) {
 
                     let customDetails = "";
 
@@ -602,9 +999,9 @@ function showOrders() {
 
                             <p>
                                 ₦${(
-                                    item.price *
-                                    item.quantity
-                                ).toLocaleString()}
+                            item.price *
+                            item.quantity
+                        ).toLocaleString()}
                             </p>
 
                             ${customDetails}
@@ -615,7 +1012,36 @@ function showOrders() {
             );
 
 
+            const trackingSteps = [
+                "Order Received",
+                "Preparing",
+                "Out for Delivery",
+                "Delivered"
+            ];
+
+            const currentStatus = order.status || "Order Received";
+            const currentStep = trackingSteps.indexOf(currentStatus);
+
+            const trackingHTML = `
+    <div class="order-tracking">
+        <h4>Order Progress</h4>
+        <div class="tracking-steps">
+            ${trackingSteps.map((step, index) => `
+                <div class="tracking-step ${index < currentStep ? "completed" :
+                    index === currentStep ? "active" : ""
+                }">
+                    <div class="tracking-dot">
+                        ${index < currentStep ? "✓" : index + 1}
+                    </div>
+                    <span>${step}</span>
+                </div>
+            `).join("")}
+        </div>
+    </div>
+`;
+
             ordersList.innerHTML += `
+            
                 <div class="order-card">
 
                     <h3>
@@ -637,19 +1063,38 @@ function showOrders() {
                         ${order.address}
                     </p>
 
-                    <p>
-                        <strong>Delivery Date:</strong>
-                        ${order.deliveryDate}
-                    </p>
+                    
+<p>
+    <strong>Delivery Date:</strong>
+    ${order.deliveryDate}
+</p>
 
-                    <p>
-                        <strong>Status:</strong>
+<p>
+    <strong>Payment Method:</strong>
+    ${order.paymentMethod || "Not recorded"}
+</p>
 
-                        <span class="order-status">
-                            🟠 ${order.status}
-                        </span>
-                    </p>
+<p>
+    <strong>Payment Status:</strong>
+    <span class="payment-status">
+        ${order.paymentStatus || "Payment Pending"}
+    </span>
+</p>
 
+                 
+<p>
+    <strong>Status:</strong>
+
+    <span class="order-status">
+        ${order.status === "Delivered" ? "🟢" :
+                    order.status === "Out for Delivery" ? "🚚" :
+                        order.status === "Preparing" ? "🔵" :
+                            "🟠"
+                }
+        ${order.status}
+    </span>
+</p>
+        ${trackingHTML}
                     <hr>
 
                     <h4>Items Purchased</h4>
@@ -709,7 +1154,7 @@ const noDeleteBtn =
 if (yesDeleteBtn) {
 
     yesDeleteBtn.onclick =
-        function() {
+        function () {
 
             if (
                 pendingOrderNumber === null
@@ -725,7 +1170,7 @@ if (yesDeleteBtn) {
 
             const orderIndex =
                 orders.findIndex(
-                    function(order) {
+                    function (order) {
 
                         return String(
                             order.orderNumber
@@ -766,7 +1211,7 @@ if (yesDeleteBtn) {
 if (noDeleteBtn) {
 
     noDeleteBtn.onclick =
-        function() {
+        function () {
 
             closeDeleteModal();
         };
@@ -791,6 +1236,9 @@ function closeDeleteModal() {
 
 showOrders();
 
+// Refresh order statuses every 30 seconds
+setInterval(showOrders, 30000);
+
 
 // ===============================
 // CART COUNT
@@ -809,7 +1257,7 @@ function updateCartCount() {
     let totalItems = 0;
 
 
-    cart.forEach(function(item) {
+    cart.forEach(function (item) {
 
         totalItems +=
             item.quantity;
@@ -828,19 +1276,62 @@ updateCartCount();
 // GO TO CHECKOUT
 // ===============================
 
+
 function goToCheckout() {
-
     if (cart.length === 0) {
-
         showNotification(
             "Your cart is empty. Please add an item first."
         );
-
         return;
     }
 
-    window.location.href =
-        "checkout.html";
+    const popup = document.getElementById("orderNoticePopup");
+
+    if (popup) {
+        popup.classList.add("show");
+    } else {
+        console.error("Order notice popup was not found.");
+    }
+}
+
+// Close the popup and stay on the cart page.
+const closeOrderNotice =
+    document.getElementById("closeOrderNotice");
+
+const cancelOrderNotice =
+    document.getElementById("cancelOrderNotice");
+
+const continueOrderNotice =
+    document.getElementById("continueOrderNotice");
+
+const orderNoticePopup =
+    document.getElementById("orderNoticePopup");
+
+if (closeOrderNotice && orderNoticePopup) {
+    closeOrderNotice.addEventListener("click", function () {
+        orderNoticePopup.classList.remove("show");
+    });
+}
+
+if (cancelOrderNotice && orderNoticePopup) {
+    cancelOrderNotice.addEventListener("click", function () {
+        orderNoticePopup.classList.remove("show");
+    });
+}
+
+if (continueOrderNotice) {
+    continueOrderNotice.addEventListener("click", function () {
+        window.location.href = "checkout.html";
+    });
+}
+
+// Close when the customer clicks the dark background.
+if (orderNoticePopup) {
+    orderNoticePopup.addEventListener("click", function (event) {
+        if (event.target === orderNoticePopup) {
+            orderNoticePopup.classList.remove("show");
+        }
+    });
 }
 
 
@@ -879,7 +1370,7 @@ function showNotification(message) {
 
 
     setTimeout(
-        function() {
+        function () {
 
             notification.classList.remove(
                 "show"
@@ -895,7 +1386,7 @@ const cakePrice = document.getElementById("cakePrice");
 
 if (cakeSize && cakePrice) {
 
-    cakeSize.onchange = function() {
+    cakeSize.onchange = function () {
 
         if (cakeSize.value === "Small") {
             cakePrice.textContent = "Price: ₦10,000";
@@ -917,7 +1408,7 @@ const cakePriceDisplay = document.getElementById("cakePrice");
 
 if (cakeSizeSelect && cakePriceDisplay) {
 
-    cakeSizeSelect.onchange = function() {
+    cakeSizeSelect.onchange = function () {
 
         if (cakeSizeSelect.value === "Small") {
             cakePriceDisplay.textContent = "Price: ₦10,000";
@@ -939,7 +1430,7 @@ const customCakeBtn = document.getElementById("customCakeBtn");
 
 if (customCakeBtn) {
 
-    customCakeBtn.onclick = function() {
+    customCakeBtn.onclick = function () {
 
         const cakeType =
             document.getElementById("cakeType").value;
@@ -957,7 +1448,7 @@ if (customCakeBtn) {
         if (
             cakeType === "" ||
             cakeSizeValue === "" ||
-            cakeTheme === "" 
+            cakeTheme === ""
         ) {
             showNotification(
                 "Please fill in all required cake details."
@@ -987,7 +1478,7 @@ if (customCakeBtn) {
                 size: cakeSizeValue,
                 theme: cakeTheme,
                 message: cakeMessage
-                
+
             }
         });
 
@@ -998,20 +1489,14 @@ if (customCakeBtn) {
             "Cake added to your cart! 🎂🛒";
 
 
-        setTimeout(function() {
+        setTimeout(function () {
             window.location.href = "shop.html";
         }, 1000);
 
     };
 
 }
-function goToCheckout(){
-    if (cart.length === 0){
-        showNotification("Your cart is empty. Please add an item first.");
-        return;
-    }
-    window.location.href="checkout.html";
-}
+
 function showNotification(message) {
 
     let notification = document.getElementById("notificationBar");
@@ -1025,7 +1510,7 @@ function showNotification(message) {
     notification.textContent = message;
     notification.classList.add("show");
 
-    setTimeout(function() {
+    setTimeout(function () {
         notification.classList.remove("show");
     }, 3000);
 }
@@ -1037,7 +1522,7 @@ function updateCartCount() {
 
     let totalItems = 0;
 
-    cart.forEach(function(item) {
+    cart.forEach(function (item) {
         totalItems += item.quantity;
     });
 
@@ -1047,7 +1532,7 @@ function updateCartCount() {
 updateCartCount();
 const backToTop = document.getElementById("backToTop");
 if (backToTop) {
-    backToTop.onclick= function() {
+    backToTop.onclick = function () {
         window.scrollTo({
             top: 0,
             behavior: "smooth"
@@ -1064,7 +1549,7 @@ const shawarmaPriceDisplay =
 
 if (shawarmaSizeSelect && shawarmaPriceDisplay) {
 
-    shawarmaSizeSelect.onchange = function() {
+    shawarmaSizeSelect.onchange = function () {
 
         if (shawarmaSizeSelect.value === "Regular") {
 
@@ -1095,7 +1580,7 @@ const shawarmaBtn =
 
 if (shawarmaBtn) {
 
-    shawarmaBtn.onclick = function() {
+    shawarmaBtn.onclick = function () {
 
         const shawarmaType =
             document.getElementById("shawarmaType").value;
@@ -1103,12 +1588,12 @@ if (shawarmaBtn) {
         const shawarmaSize =
             document.getElementById("shawarmaSize").value;
 
-       
+
 
         const shawarmaSpice =
             document.getElementById("shawarmaSpice").value;
 
-        
+
 
         if (
             shawarmaType === "" ||
@@ -1157,7 +1642,7 @@ if (shawarmaBtn) {
 
                 spice: shawarmaSpice,
 
-                
+
 
             }
 
@@ -1174,7 +1659,7 @@ if (shawarmaBtn) {
         );
 
 
-        setTimeout(function() {
+        setTimeout(function () {
 
             window.location.href = "shop.html";
 
@@ -1193,7 +1678,7 @@ const pizzaPriceDisplay =
 
 if (pizzaSizeSelect && pizzaPriceDisplay) {
 
-    pizzaSizeSelect.onchange = function() {
+    pizzaSizeSelect.onchange = function () {
 
         if (pizzaSizeSelect.value === "Small") {
 
@@ -1229,7 +1714,7 @@ const pizzaBtn =
 
 if (pizzaBtn) {
 
-    pizzaBtn.onclick = function() {
+    pizzaBtn.onclick = function () {
 
         const pizzaType =
             document.getElementById("pizzaType").value;
@@ -1314,7 +1799,7 @@ if (pizzaBtn) {
         );
 
 
-        setTimeout(function() {
+        setTimeout(function () {
 
             window.location.href = "shop.html";
 
@@ -1365,355 +1850,289 @@ function getCurrentAccount() {
 
     const accounts = getZobacAccounts();
 
-    return accounts.find(function(account) {
+    return accounts.find(function (account) {
         return (
             (account.email || "").toLowerCase() === email
         );
     }) || null;
 }
 
-
 // ===============================
-// REGISTRATION
+// REGISTRATION - BACKEND
 // ===============================
 
-document.addEventListener("DOMContentLoaded", function() {
-
-    const registerBtn =
-        document.getElementById("registerBtn");
+document.addEventListener("DOMContentLoaded", function () {
+    const registerBtn = document.getElementById("registerBtn");
 
     if (!registerBtn) return;
 
+    registerBtn.addEventListener("click", async function () {
+        const name = document.getElementById("registerName").value.trim();
+        const email = document.getElementById("registerEmail").value.trim().toLowerCase();
+        const phone = document.getElementById("registerPhone").value.trim();
+        const password = document.getElementById("registerPassword").value;
+        const confirmPassword = document.getElementById("confirmPassword").value;
+        const message = document.getElementById("registerMessage");
 
-    registerBtn.addEventListener("click", function() {
-
-        const name =
-            document.getElementById("registerName").value.trim();
-
-        const email =
-            document.getElementById("registerEmail").value.trim().toLowerCase();
-
-        const phone =
-            document.getElementById("registerPhone").value.trim();
-
-        const password =
-            document.getElementById("registerPassword").value;
-
-        const confirmPassword =
-            document.getElementById("confirmPassword").value;
-
-        const message =
-            document.getElementById("registerMessage");
-
-
-        if (
-            !name ||
-            !email ||
-            !phone ||
-            !password ||
-            !confirmPassword
-        ) {
-            message.textContent =
-                "Please fill in all fields.";
-
+        if (!name || !email || !phone || !password || !confirmPassword) {
+            message.textContent = "Please fill in all fields.";
             message.style.color = "red";
             return;
         }
 
-
-        if (password.length < 6) {
-
-            message.textContent =
-                "Password must be at least 6 characters.";
-
+        if (password.length < 8) {
+            message.textContent = "Password must be at least 8 characters.";
             message.style.color = "red";
             return;
         }
-
 
         if (password !== confirmPassword) {
-
-            message.textContent =
-                "Passwords do not match.";
-
+            message.textContent = "Passwords do not match.";
             message.style.color = "red";
             return;
         }
 
+        registerBtn.disabled = true;
+        message.textContent = "Creating your account...";
+        message.style.color = "";
 
-        const accounts = getZobacAccounts();
-
-
-        // Check this email only
-        const existingAccount =
-            accounts.find(function(account) {
-
-                return (
-                    (account.email || "").toLowerCase() ===
-                    email
-                );
-
+        try {
+            const response = await fetch("/api/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    password: password
+                })
             });
 
+            const result = await response.json();
 
-        if (existingAccount) {
+            if (!response.ok) {
+                throw new Error(result.message || "Registration failed.");
+            }
 
+            message.textContent = result.message;
+            message.style.color = "green";
+
+            document.getElementById("registerPassword").value = "";
+            document.getElementById("confirmPassword").value = "";
+
+            setTimeout(function () {
+                window.location.href = "login.html";
+            }, 1000);
+
+        } catch (error) {
             message.textContent =
-                "An account with this email already exists.";
+                error.message === "Failed to fetch"
+                    ? "Could not connect to the bakery server. Please open the website through your running backend."
+                    : error.message;
 
             message.style.color = "red";
-            return;
+        } finally {
+            registerBtn.disabled = false;
         }
-
-
-        // Create new account
-        const newAccount = {
-
-            name: name,
-
-            email: email,
-
-            phone: phone,
-
-            password: password
-
-        };
-
-
-        // Add it without deleting other customers
-        accounts.push(newAccount);
-
-
-        saveZobacAccounts(accounts);
-
-
-        message.textContent =
-            "Registration successful!";
-
-        message.style.color = "green";
-
-
-        setTimeout(function() {
-
-            window.location.href =
-                "login.html";
-
-        }, 1000);
-
     });
-
 });
 
 
+
+ // ===============================
+// LOGIN - BACKEND
 // ===============================
-// LOGIN
-// ===============================
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
+    const loginForm = document.getElementById("loginForm");
+    const loginBtn = document.getElementById("loginBtn");
+    const emailInput = document.getElementById("loginEmail");
+    const passwordInput = document.getElementById("loginPassword");
+    const message = document.getElementById("loginMessage");
 
-    const loginBtn =
-        document.getElementById("loginBtn");
+   if (!loginForm || !loginBtn || !emailInput || !passwordInput || !message) {
+    console.log("Missing login element:", {
+        loginForm,
+        loginBtn,
+        emailInput,
+        passwordInput,
+        message
+    });
+    return;
+}
 
-    const emailInput =
-        document.getElementById("loginEmail");
-
-    const passwordInput =
-        document.getElementById("loginPassword");
-
-    const message =
-        document.getElementById("loginMessage");
-
-
-    if (
-        !loginBtn ||
-        !emailInput ||
-        !passwordInput ||
-        !message
-    ) {
-        return;
-    }
-
-
-    // Remember the last email typed
-    const rememberedEmail =
-        localStorage.getItem("zobacLoginEmail");
+console.log("LOGIN FORM CONNECTED");
+    const rememberedEmail = localStorage.getItem("zobacLoginEmail");
 
     if (rememberedEmail) {
         emailInput.value = rememberedEmail;
     }
 
+   loginBtn.addEventListener("click", async function (event) {
+    console.log("LOGIN BUTTON CLICKED");
+    event.preventDefault();
 
-    loginBtn.addEventListener("click", function(event) {
+    console.log("LOGIN BUTTON CLICKED");
 
-        event.preventDefault();
-
-
-        const email =
-            emailInput.value.trim().toLowerCase();
-
-        const password =
-            passwordInput.value;
-
-
-        message.textContent = "";
-
-
+    const email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
         if (!email || !password) {
-
             message.style.color = "red";
-
-            message.textContent =
-                "Please enter your email and password.";
-
+            message.textContent = "Please enter your email and password.";
             return;
         }
 
+        loginBtn.disabled = true;
+        message.style.color = "";
+        message.textContent = "Logging in...";
 
-        const accounts = getZobacAccounts();
-
-
-        // Find the account belonging to THIS email
-        const account =
-            accounts.find(function(account) {
-
-                return (
-                    (account.email || "").toLowerCase() ===
-                    email
-                );
-
+        try {
+            const response = await fetch("/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "same-origin",
+                body: JSON.stringify({ email, password })
             });
+const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || "Login failed.");
+            }
 
+            localStorage.setItem("zobacLoginEmail", email);
+            localStorage.setItem("zobacCurrentEmail", email);
+            localStorage.removeItem("zobacLoggedIn");
 
-        if (!account) {
+            message.style.color = "green";
+            message.textContent = "Login successful!";
+
+            window.location.href = "index.html";
+
+        } catch (error) {
+            console.error("Login failed:", error);
 
             message.style.color = "red";
-
             message.textContent =
-                "Account not found. Please register first.";
-
-            return;
+                error.message === "Failed to fetch"
+                    ? "Cannot connect to the server. Check that it is running."
+                    : error.message;
+        } finally {
+            loginBtn.disabled = false;
         }
-
-
-        // Check this customer's password
-        if (account.password !== password) {
-
-            message.style.color = "red";
-
-            message.textContent =
-                "Incorrect email or password.";
-
-            return;
-        }
-
-
-        // Remember THIS customer
-        localStorage.setItem(
-            "zobacCurrentEmail",
-            email
-        );
-
-
-        // Keep your existing login system working
-        localStorage.setItem(
-            "zobacLoginEmail",
-            email
-        );
-
-        localStorage.setItem(
-            "zobacLoggedIn",
-            "true"
-        );
-
-
-        message.style.color = "green";
-
-        message.textContent =
-            "Login successful!";
-
-
-        setTimeout(function() {
-
-            window.location.href =
-                "index.html";
-
-        }, 500);
-
     });
-
 });
+
 
 
 // ===============================
 // LOAD CURRENT ACCOUNT
 // ===============================
 
-document.addEventListener("DOMContentLoaded", function() {
 
-    const accountName =
-        document.getElementById("accountName");
-
-    const accountPhone =
-        document.getElementById("accountPhone");
-
-    const savedName =
-        document.getElementById("savedName");
-
-    const savedPhone =
-        document.getElementById("savedPhone");
-
+document.addEventListener("DOMContentLoaded", async function () {
+    const accountName = document.getElementById("accountName");
+    const accountPhone = document.getElementById("accountPhone");
+    const savedName = document.getElementById("savedName");
+    const savedPhone = document.getElementById("savedPhone");
+    const saveAccountBtn = document.getElementById("saveAccountBtn");
 
     // Only run on account.html
-    if (
-        !accountName ||
-        !accountPhone ||
-        !savedName ||
-        !savedPhone
-    ) {
+    if (!accountName || !accountPhone || !savedName || !savedPhone) {
         return;
     }
 
+    try {
+        // Load the logged-in customer's details from the backend
+        const response = await fetch("/api/customer/session", {
+            credentials: "same-origin"
+        });
 
-    const account =
-        getCurrentAccount();
+        const result = await response.json();
 
+        if (!response.ok || result.authenticated !== true) {
+            savedName.textContent = "Please log in again";
+            savedPhone.textContent = "Please log in again";
+            return;
+        }
 
-    if (!account) {
+        const customer = result.customer;
 
-        accountName.value = "";
-        accountPhone.value = "";
+        accountName.value = customer.name || "";
+        accountPhone.value = customer.phone || "";
 
-        savedName.textContent =
-            "Not saved yet";
+        savedName.textContent = customer.name || "Not saved yet";
+        savedPhone.textContent = customer.phone || "Not saved yet";
 
-        savedPhone.textContent =
-            "Not saved yet";
-
+    } catch (error) {
+        console.error("Could not load account details:", error);
+        savedName.textContent = "Could not load details";
+        savedPhone.textContent = "Could not load details";
         return;
     }
 
+    // Save account details to the backend
+    if (saveAccountBtn) {
+        saveAccountBtn.addEventListener("click", async function (event) {
+            event.preventDefault();
 
-    // Load THIS email's information
-    accountName.value =
-        account.name || "";
+            const name = accountName.value.trim();
+            const phone = accountPhone.value.trim();
 
-    accountPhone.value =
-        account.phone || "";
+            if (!name) {
+                alert("Please enter your name.");
+                return;
+            }
 
-    savedName.textContent =
-        account.name || "Not saved yet";
+            saveAccountBtn.disabled = true;
+            saveAccountBtn.textContent = "Saving...";
 
-    savedPhone.textContent =
-        account.phone || "Not saved yet";
+            try {
+                const response = await fetch("/api/customer/profile", {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({ name, phone })
+                });
 
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        result.message || "Could not save account details."
+                    );
+                }
+
+                accountName.value = result.customer.name;
+                accountPhone.value = result.customer.phone;
+
+                savedName.textContent = result.customer.name;
+                savedPhone.textContent = result.customer.phone;
+
+                alert("Account details saved successfully!");
+
+            } catch (error) {
+                console.error("Account save failed:", error);
+                alert(error.message || "Could not save account details.");
+            } finally {
+                saveAccountBtn.disabled = false;
+                saveAccountBtn.textContent = "Save";
+            }
+        });
+    }
 });
+
 
 
 // ===============================
 // EDIT ACCOUNT INFORMATION
 // ===============================
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
 
     const editBtn =
         document.getElementById("editAccountBtn");
@@ -1745,7 +2164,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     // EDIT
-    editBtn.addEventListener("click", function() {
+    editBtn.addEventListener("click", function () {
 
         nameInput.readOnly = false;
         phoneInput.readOnly = false;
@@ -1757,7 +2176,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     // SAVE
-    saveBtn.addEventListener("click", function() {
+    saveBtn.addEventListener("click", function () {
 
         const currentEmail =
             getCurrentEmail();
@@ -1777,7 +2196,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
         const accountIndex =
-            accounts.findIndex(function(account) {
+            accounts.findIndex(function (account) {
 
                 return (
                     (account.email || "").toLowerCase() ===
@@ -1849,29 +2268,41 @@ document.addEventListener("DOMContentLoaded", function() {
 // ===============================
 // UPDATE NAVBAR LINKS
 // ===============================
-document.addEventListener("DOMContentLoaded", function () {
-    const account = JSON.parse(localStorage.getItem("zobacAccount"));
-    console.log("Login status:", localStorage.getItem("zobacLoggedIn"));
-      
 
-    // Only change Register links inside the navbar
+ // UPDATE NAVBAR LINKS
+document.addEventListener("DOMContentLoaded", async function () {
     const registerLinks = document.querySelectorAll(
-        '.nav-links a[href="register.html"]'
+        '.nav-links a[href="register.html"], .nav-links a[href="account.html"]'
     );
 
-    registerLinks.forEach(function (link) {
-        if (account && isLoggedIn) {
-            link.href = "account.html";
-            link.textContent = "👤 Account";
-        } else if (account && !isLoggedIn) {
-            link.href = "login.html";
-            link.textContent = "🔐 Login";
-        } else {
-            link.href = "register.html";
-            link.textContent = "📝 Register";
+    try {
+        const response = await fetch("/api/customer/session", {
+            credentials: "same-origin"
+        });
+
+        if (!response.ok) {
+            throw new Error("Could not check customer session.");
         }
-    });
+
+        const result = await response.json();
+        const isLoggedIn = result.authenticated === true;
+
+        registerLinks.forEach(function (link) {
+            if (isLoggedIn) {
+                link.href = "account.html";
+                link.textContent = "👤 Account";
+            } else {
+                link.href = "register.html";
+                link.textContent = "📝 Register";
+            }
+        });
+
+    } catch (error) {
+        console.error("Could not update navbar links:", error);
+    }
 });
+
+
 
 
 // SIGN OUT CONFIRMATION
@@ -1894,18 +2325,45 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (confirmSignOutBtn) {
-    confirmSignOutBtn.addEventListener("click", function () {
-        localStorage.removeItem("zobacLoggedIn");
+        confirmSignOutBtn.addEventListener("click", async function () {
+            confirmSignOutBtn.disabled = true;
 
-        const accountMenu = document.querySelector(".account-menu");
-        if (accountMenu) {
-            accountMenu.style.display = "none";
-        }
+            try {
+                // End the customer session on the server.
+                const response = await fetch("/api/customer/logout", {
+                    method: "POST",
+                    credentials: "same-origin"
+                });
 
-        window.location.href = "index.html";
-    });
-}
+                if (!response.ok) {
+                    throw new Error("Could not sign out.");
+                }
+
+                // Clear the old browser-only login information.
+                localStorage.removeItem("zobacLoggedIn");
+                localStorage.removeItem("zobacCurrentEmail");
+
+                const accountMenu = document.querySelector(".account-menu");
+
+                if (accountMenu) {
+                    accountMenu.style.display = "none";
+                }
+
+                window.location.href = "login.html";
+
+            } catch (error) {
+                console.error("Sign-out failed:", error);
+
+                alert(
+                    "Could not contact the server to sign out. Please try again."
+                );
+
+                confirmSignOutBtn.disabled = false;
+            }
+        });
+    }
 });
+
 // CLEAR ACCOUNT INFORMATION
 document.addEventListener("DOMContentLoaded", function () {
     const clearAccountBtn = document.getElementById("clearAccountBtn");
@@ -1951,7 +2409,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const isHidden = menuOptions.style.display === "none";
 
             menuOptions.style.display = isHidden ? "grid" : "none";
-            
+
         });
     }
 });
@@ -2054,8 +2512,8 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("currentPassword").value = "";
         document.getElementById("newPassword").value = "";
         document.getElementById("confirmNewPassword").value = "";
-        setTimeout(function() {
-            window.location.href="account.html";
+        setTimeout(function () {
+            window.location.href = "account.html";
         }, 1500);
     });
 });
@@ -2114,3 +2572,413 @@ document.addEventListener("DOMContentLoaded", function () {
     setInterval(slideNext, 6000);
 
 });
+
+// ==========================
+// SHOP PRODUCT SEARCH
+// ==========================
+
+const productSearch = document.getElementById("productSearch");
+const searchMessage = document.getElementById("searchMessage");
+
+if (productSearch) {
+    productSearch.addEventListener("input", function () {
+        const searchTerm = productSearch.value.trim().toLowerCase();
+        const products = document.querySelectorAll(".menu-card");
+        let visibleCount = 0;
+
+        products.forEach(function (product) {
+            const productText = product.textContent.toLowerCase();
+
+            if (productText.includes(searchTerm)) {
+                product.style.display = "";
+                visibleCount++;
+            } else {
+                product.style.display = "none";
+            }
+        });
+
+        if (searchMessage) {
+            if (visibleCount === 0) {
+                searchMessage.textContent = "No products found. Try another search.";
+            } else if (searchTerm !== "") {
+                searchMessage.textContent = visibleCount + " product(s) found.";
+            } else {
+                searchMessage.textContent = "";
+            }
+        }
+    });
+}
+
+
+function getCustomerOrders() {
+    const key = getCustomerStorageKey("Orders");
+
+    if (!key) {
+        return [];
+    }
+
+    try {
+        return JSON.parse(localStorage.getItem(key)) || [];
+    } catch (error) {
+        console.error("Could not read customer orders:", error);
+        return [];
+    }
+}
+
+
+
+
+function setBankDropdown(open) {
+    bankDetails.hidden = !open;
+    bankDropdownBtn.setAttribute("aria-expanded", String(open));
+}
+const closeBankDetails = document.getElementById("closeBankDetails");
+
+
+document.querySelectorAll(".add-to-cart-btn").forEach(function (button) {
+    button.addEventListener("click", function () {
+        console.log("SHOP BUTTON CLICKED:", button.dataset.product);
+    });
+});
+document.querySelectorAll(".add-to-cart-btn").forEach(function (button) {
+    button.addEventListener("click", function () {
+        const productName = button.dataset.product;
+        const price = Number(button.dataset.price);
+
+        addToCart(productName, price);
+    });
+});
+
+const checkoutBtn = document.getElementById("checkoutBtn");
+
+if (checkoutBtn) {
+    checkoutBtn.addEventListener("click", function () {
+        if (typeof goToCheckout === "function") {
+            goToCheckout();
+        } else {
+            console.error("goToCheckout() function was not found.");
+        }
+    });
+}
+// Checkout page: handle Place Order button
+const placeOrderBtn = document.getElementById("placeOrderBtn");
+
+if (placeOrderBtn) {
+    placeOrderBtn.addEventListener("click", function () {
+        if (typeof placeOrder === "function") {
+            placeOrder();
+        } else {
+            console.error("placeOrder() function was not found.");
+        }
+    });
+}
+
+/* ORDERS PAGE: Check the real backend login session */
+
+document.addEventListener("DOMContentLoaded", async function () {
+    const ordersList = document.getElementById("ordersList");
+
+    // Do nothing on pages other than orders.html.
+    if (!ordersList) return;
+
+    try {
+        const response = await fetch("/api/customer/session", {
+            credentials: "same-origin"
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.authenticated !== true) {
+            window.location.href = "login.html";
+            return;
+        }
+
+        // The server confirms login. Save the customer's email
+        // so the existing customer-specific order storage can work.
+        if (result.customer && result.customer.email) {
+            localStorage.setItem(
+                "zobacCurrentEmail",
+                result.customer.email.trim().toLowerCase()
+            );
+        }
+
+        // Load orders after confirming login.
+        await showOrders();
+
+    } catch (error) {
+        console.error("Could not verify login for Orders:", error);
+        ordersList.innerHTML =
+            "<p>Could not connect to the bakery server. Please try again.</p>";
+    }
+});
+
+
+
+ // Navbar Login button
+const navbarLoginBtn = document.querySelector(".nav-links #loginBtn");
+
+if (navbarLoginBtn) {
+    navbarLoginBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        window.location.href = "login.html";
+    });
+}
+
+
+// Login popup button
+const loginPopupBtn = document.getElementById("loginPopupBtn");
+
+if (loginPopupBtn) {
+    loginPopupBtn.addEventListener("click", function () {
+        window.location.href = "login.html";
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const goBackBtn = document.getElementById("goBackBtn");
+
+    if (goBackBtn) {
+        goBackBtn.addEventListener("click", function (event) {
+            event.preventDefault();
+            window.location.href = "account.html";
+        });
+    }
+});
+
+
+/* CUSTOMER REVIEW POPUP */
+document.addEventListener("DOMContentLoaded", function () {
+    const reviewModal = document.getElementById("reviewModal");
+    const reviewForm = document.getElementById("reviewForm");
+    const reviewStars = document.querySelectorAll("#reviewStars button");
+    const reviewOrderNumber = document.getElementById("reviewOrderNumber");
+    const reviewComment = document.getElementById("reviewComment");
+    const reviewMessage = document.getElementById("reviewMessage");
+    const closeReviewBtn = document.getElementById("closeReviewBtn");
+    const skipReviewBtn = document.getElementById("skipReviewBtn");
+
+    if (!reviewModal || !reviewForm) return;
+
+    let selectedRating = 0;
+    let currentReviewOrder = null;
+
+    function hideReviewPopup() {
+        if (currentReviewOrder) {
+            sessionStorage.setItem(
+                "zobacReviewDismissed_" + currentReviewOrder,
+                "true"
+            );
+        }
+
+        reviewModal.style.display = "none";
+    }
+
+  
+async function checkForDeliveredOrderReview() {
+    if (reviewModal.style.display === "flex") return;
+
+    try {
+        const response = await fetch(
+            "/api/customer/reviewable-orders",
+            { credentials: "same-origin" }
+        );
+
+        if (!response.ok) return;
+
+        const orders = await response.json();
+
+        currentReviewOrder = orders.find(order =>
+            !sessionStorage.getItem(
+                "zobacReviewDismissed_" + order.orderNumber
+            )
+        );
+
+        if (!currentReviewOrder) return;
+
+        selectedRating = 0;
+        reviewForm.reset();
+
+        reviewStars.forEach(star =>
+            star.classList.remove("selected")
+        );
+
+        reviewOrderNumber.textContent =
+            "Order: " + currentReviewOrder.orderNumber;
+
+        reviewMessage.textContent = "";
+        reviewModal.style.display = "flex";
+
+    } catch (error) {
+        console.error("Could not check reviewable orders:", error);
+    }
+}
+
+
+    reviewStars.forEach(star => {
+        star.addEventListener("click", function () {
+            selectedRating = Number(this.dataset.rating);
+
+            reviewStars.forEach(button => {
+                button.classList.toggle(
+                    "selected",
+                    Number(button.dataset.rating) <= selectedRating
+                );
+            });
+        });
+    });
+
+    closeReviewBtn?.addEventListener("click", hideReviewPopup);
+    skipReviewBtn?.addEventListener("click", hideReviewPopup);
+
+   
+reviewForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    if (!currentReviewOrder) return;
+
+    if (selectedRating < 1 || selectedRating > 5) {
+        reviewMessage.textContent = "Please select a star rating.";
+        return;
+    }
+
+    const comment = reviewComment.value.trim();
+
+    if (!comment) {
+        reviewMessage.textContent = "Please write a comment.";
+        return;
+    }
+
+    const submitButton = document.getElementById("submitReviewBtn");
+    submitButton.disabled = true;
+    submitButton.textContent = "Submitting...";
+
+    try {
+        const response = await fetch("/api/reviews", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                orderNumber: currentReviewOrder.orderNumber,
+                rating: selectedRating,
+                comment: comment
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            reviewMessage.textContent =
+                result.message || "Could not submit your review.";
+            return;
+        }
+
+        localStorage.setItem(
+            "zobacReviewSubmitted_" + currentReviewOrder.orderNumber,
+            "true"
+        );
+
+        reviewMessage.textContent = result.message;
+        currentReviewOrder = null;
+
+        setTimeout(() => {
+            reviewModal.style.display = "none";
+        }, 1500);
+
+    } catch (error) {
+        console.error("Review submission failed:", error);
+        reviewMessage.textContent =
+            "Connection error. Please try again.";
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "Submit Review";
+    }
+});
+
+
+   window.checkForDeliveredOrderReview = checkForDeliveredOrderReview;
+
+checkForDeliveredOrderReview();
+
+setInterval(checkForDeliveredOrderReview, 10000);
+});
+
+// =====================================
+// ZOBAC BAKERY - HOMEPAGE CUSTOMER REVIEWS
+// =====================================
+
+async function loadHomepageReviews() {
+    const reviewsList = document.getElementById("reviewsList");
+
+    if (!reviewsList) return;
+
+    try {
+        const response = await fetch("/api/reviews", {
+            credentials: "same-origin"
+        });
+
+        if (!response.ok) {
+            throw new Error("Could not load reviews.");
+        }
+
+        const reviews = await response.json();
+
+        reviewsList.replaceChildren();
+
+        if (!Array.isArray(reviews) || reviews.length === 0) {
+            const message = document.createElement("p");
+            message.className = "reviews-loading";
+            message.textContent =
+                "No customer reviews yet. Be the first to share your experience!";
+            reviewsList.appendChild(message);
+            return;
+        }
+
+        reviews.forEach(review => {
+            const card = document.createElement("article");
+            card.className = "homepage-review-card";
+
+            const stars = document.createElement("div");
+            stars.className = "homepage-review-stars";
+
+            const rating = Math.max(
+                0,
+                Math.min(5, Number(review.rating) || 0)
+            );
+
+            stars.textContent = "★".repeat(rating) + "☆".repeat(5 - rating);
+            stars.setAttribute("aria-label", `${rating} out of 5 stars`);
+
+            const comment = document.createElement("p");
+            comment.className = "homepage-review-comment";
+            comment.textContent = `“${review.comment || ""}”`;
+
+            const customer = document.createElement("h3");
+            customer.className = "homepage-review-customer";
+            customer.textContent = review.customerName || "Zobac Customer";
+
+            const verified = document.createElement("p");
+            verified.className = "homepage-review-verified";
+            verified.textContent = "♥ A valued Zobac customer";
+
+            card.append(stars, comment, customer, verified);
+
+            reviewsList.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error("Homepage reviews error:", error);
+
+        reviewsList.replaceChildren();
+
+        const message = document.createElement("p");
+        message.className = "reviews-loading";
+        message.textContent =
+            "Customer reviews are temporarily unavailable.";
+
+        reviewsList.appendChild(message);
+    }
+}
+
+loadHomepageReviews();

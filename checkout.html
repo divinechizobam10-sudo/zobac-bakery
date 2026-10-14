@@ -3,31 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zobac Bakery-Checkout</title>
+    <title>Zobac Bakery - Checkout</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="checkout-page">
+
     <h1>Checkout</h1>
+
     <div id="checkoutItems">
         <p>Loading your order...</p>
     </div>
-    <h2 id="checkoutTotal">Total: ₦0</h2>
+
+    <h2 id="checkoutTotal">Goods Total: ₦0</h2>
+
     <div class="checkout-form">
-        <input type="text" id="customerName" placeholder="Full Name">
-        <input type="tel" id="customerPhone" placeholder="Phone Number">
-        <textarea id="customerAddress" placeholder="Delivery Address"></textarea>
-        <label for="Delivery Date">Delivery Date</label>
-        <input type="date" id="deliveryDate">
+
+        <input
+            type="text"
+            id="customerName"
+            placeholder="Full Name"
+            required
+        >
+
+        <input
+            type="tel"
+            id="customerPhone"
+            placeholder="Phone Number"
+            required
+        >
+
+        <textarea
+            id="customerAddress"
+            placeholder="Full Delivery Address"
+            required
+        ></textarea>
+
+        <label for="deliveryDate">Delivery Date</label>
+        <input type="date" id="deliveryDate" required>
+
     </div>
-    <button id="placeOrderBtn"onclick="placeOrder()">Place Order</button>
-     <a href="orders.html" id="viewOrderBtn" style="display: none;"><button>View Order</button></a>
+
+    <section class="delivery-notice">
+    
+<!-- PAYMENT METHODS -->
+
+<section class="payment-section">
+
+    <h2>Choose Payment Method</h2>
+
+    <!-- BANK TRANSFER CARD -->
+    <div class="payment-card">
+
+        <div class="payment-card-header">
+            <label class="payment-option">
+                <input type="radio"
+                       name="paymentMethod"
+                       value="Bank Transfer">
+
+                <span>
+                    <strong>Bank Transfer</strong>
+                    <small>Pay directly to our bank account</small>
+                </span>
+            </label>
+
+            <button type="button"
+                    id="bankDropdownBtn"
+                    class="dropdown-toggle"
+                    aria-expanded="false"
+                    aria-controls="bankTransferDetails">
+                <svg width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round"
+                     stroke-linejoin="round">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </button>
+        </div>
+
+<div id="bankTransferDetails" hidden>
+    <div class="bank-details-card">
+
+        <button
+            type="button"
+            id="closeBankDetails"
+            class="close-bank-details">
+            Close ✕
+        </button>
+
+        <h3>Bank Account Details</h3>
+
+        <div class="bank-detail-row">
+            <span>Bank Name</span>
+            <strong>STERLING BANK</strong>
+        </div>
+
+        <div class="bank-detail-row">
+            <span>Account Name</span>
+            <strong>ZOBAC-RELIANCE NIG LTD</strong>
+        </div>
+
+        <div class="bank-detail-row">
+            <span>Account Number</span>
+            <strong>0093616101</strong>
+        </div>
+
+        <p class="transfer-note">
+            Your payment will remain pending until the bakery
+            confirms receipt.
+        </p>
+
+        <button
+            type="button"
+            id="transferConfirmation"
+            class="transfer-confirm-btn"
+            data-confirmed="false">
+            I've Done the Transfer
+        </button>
+
+        <p id="transferButtonMessage"></p>
+
+    </div>
+</div>
+<!-- PAY AT THE BAKERY CARD -->
+    <label class="payment-card bakery-payment-card">
+        <span class="bakery-payment-choice">
+            <input type="radio"
+                   name="paymentMethod"
+                   value="Pay at Bakery">
+
+            <span>
+                <strong>Pay at the Bakery</strong>
+                <small>Pay for your order directly at the bakery</small>
+            </span>
+        </span>
+    </label>
+
+    <p id="paymentMessage"></p>
+
+     </section>
+
+
+
+        <h2>🚚 Delivery Information</h2>
+
+        <p>
+            Your delivery fee will be confirmed with our dispatch rider
+            after you provide your delivery address.
+        </p>
+
+        <p>
+            We will contact you through WhatsApp and/or phone call
+            to confirm the delivery fee. You must approve the fee
+            before your order is dispatched.
+        </p>
+
+        <p>
+            <strong>Payment:</strong> Pay for your bakery products
+            to Zobac Bakery before dispatch. Pay the agreed delivery
+            fee directly to the delivery rider when your order arrives.
+        </p>
+   
+
     <p id="orderMessage"></p>
-    <a id="homeAfterOrder" href="index.html" style="display: none;"><button>Back to Home</button></a>
-    <br><br>
-    <a href="cart.html">
-        <button>Back to Cart</button>
-       
+
+   <button type="button" id="placeOrderBtn">Place Order</button>
+
+    <a href="orders.html" id="viewOrderBtn" style="display: none;">
+        <button type="button">View Order</button>
     </a>
+
+    <a href="index.html" id="homeAfterOrder" style="display: none;">
+        <button type="button">Back to Home</button>
+    </a>
+
+    <br><br>
+
+    <a href="cart.html">
+        <button type="button">Back to Cart</button>
+    </a>
+
     <script src="script.js"></script>
+
 </body>
 </html>
+
