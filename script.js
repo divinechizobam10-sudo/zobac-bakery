@@ -1886,48 +1886,55 @@ document.addEventListener("DOMContentLoaded", function () {
         message.textContent = "Creating your account...";
         message.style.color = "";
 
-        try {
-            const response = await fetch("/api/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    password: password
-                })
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || "Registration failed.");
-            }
-
-            message.textContent = result.message;
-            message.style.color = "green";
-
-            document.getElementById("registerPassword").value = "";
-            document.getElementById("confirmPassword").value = "";
-
-            setTimeout(function () {
-                window.location.href = "login.html";
-            }, 1000);
-
-        } catch (error) {
-            message.textContent =
-                error.message === "Failed to fetch"
-                    ? "Could not connect to the bakery server. Please open the website through your running backend."
-                    : error.message;
-
-            message.style.color = "red";
-        } finally {
-            registerBtn.disabled = false;
+try {
+    const response = await fetch(
+        "https://zobac-bakery-8kqp.onrender.com/api/register",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                name: name,
+                email: email,
+                phone: phone,
+                password: password
+            })
         }
-    });
-});
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            result.message || "Registration failed."
+        );
+    }
+
+    message.textContent = result.message || "Registration successful!";
+    message.style.color = "green";
+
+    document.getElementById("registerPassword").value = "";
+    document.getElementById("confirmPassword").value = "";
+
+    setTimeout(function () {
+        window.location.href = "login.html";
+    }, 1000);
+
+} catch (error) {
+    console.error("Registration error:", error);
+
+    message.textContent =
+        error.message === "Failed to fetch"
+            ? "Could not connect to the bakery server. Please try again."
+            : error.message;
+
+    message.style.color = "red";
+
+} finally {
+    registerBtn.disabled = false;
+}
 
 
 
@@ -2303,7 +2310,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 
 
-
 // SIGN OUT CONFIRMATION
 document.addEventListener("DOMContentLoaded", function () {
     const signOutBtn = document.getElementById("signOutBtn");
@@ -2328,24 +2334,35 @@ document.addEventListener("DOMContentLoaded", function () {
             confirmSignOutBtn.disabled = true;
 
             try {
-                // End the customer session on the server.
-                const response = await fetch("/api/customer/logout", {
-                    method: "POST",
-                    credentials: "same-origin"
-                });
+                const response = await fetch(
+                    "https://zobac-bakery-8kqp.onrender.com/api/customer/logout",
+                    {
+                        method: "POST",
+                        credentials: "include"
+                    }
+                );
+
+                const result = await response.json();
 
                 if (!response.ok) {
-                    throw new Error("Could not sign out.");
+                    throw new Error(
+                        result.message || "Could not sign out."
+                    );
                 }
 
-                // Clear the old browser-only login information.
+                // Clear saved browser login information.
                 localStorage.removeItem("zobacLoggedIn");
                 localStorage.removeItem("zobacCurrentEmail");
+                localStorage.removeItem("zobacLoginEmail");
 
                 const accountMenu = document.querySelector(".account-menu");
 
                 if (accountMenu) {
                     accountMenu.style.display = "none";
+                }
+
+                if (signOutModal) {
+                    signOutModal.style.display = "none";
                 }
 
                 window.location.href = "login.html";
@@ -2354,7 +2371,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("Sign-out failed:", error);
 
                 alert(
-                    "Could not contact the server to sign out. Please try again."
+                    "Could not sign out. Please check your connection and try again."
                 );
 
                 confirmSignOutBtn.disabled = false;
@@ -2362,6 +2379,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
+
 
 // CLEAR ACCOUNT INFORMATION
 document.addEventListener("DOMContentLoaded", function () {
