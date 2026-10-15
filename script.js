@@ -1886,13 +1886,19 @@ document.addEventListener("DOMContentLoaded", function () {
         message.textContent = "Creating your account...";
         message.style.color = "";
 
+
 try {
+    registerBtn.disabled = true;
+    message.textContent = "Creating your account...";
+    message.style.color = "black";
+
     const response = await fetch(
         "https://zobac-bakery-8kqp.onrender.com/api/register",
         {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Accept": "application/json"
             },
             credentials: "include",
             body: JSON.stringify({
@@ -1904,15 +1910,45 @@ try {
         }
     );
 
-    const result = await response.json();
+    // Read the response as text first so HTML responses
+    // don't cause an "Unexpected token '<'" JSON error.
+    const responseText = await response.text();
 
+    let result = {};
+
+    if (responseText.trim()) {
+        try {
+            result = JSON.parse(responseText);
+        } catch {
+            console.error(
+                "Registration server returned non-JSON:",
+                responseText.slice(0, 300)
+            );
+
+            throw new Error(
+                "The server returned an invalid response. Please check the backend registration route."
+            );
+        }
+    }
+
+    // Handle HTTP errors such as 400, 404 and 500.
     if (!response.ok) {
         throw new Error(
-            result.message || "Registration failed."
+            result.message ||
+            `Registration failed (HTTP ${response.status}).`
         );
     }
 
-    message.textContent = result.message || "Registration successful!";
+    // Successful responses should contain valid JSON.
+    if (!responseText.trim()) {
+        throw new Error(
+            "The server returned an empty response. Please check the backend."
+        );
+    }
+
+    message.textContent =
+        result.message || "Registration successful!";
+
     message.style.color = "green";
 
     document.getElementById("registerPassword").value = "";
@@ -1925,10 +1961,13 @@ try {
 } catch (error) {
     console.error("Registration error:", error);
 
-    message.textContent =
-        error.message === "Failed to fetch"
-            ? "Could not connect to the bakery server. Please try again."
-            : error.message;
+    if (error instanceof TypeError) {
+        message.textContent =
+            "Could not connect to the bakery server. Check your internet connection, Render status, and backend CORS settings.";
+    } else {
+        message.textContent =
+            error.message || "Something went wrong during registration.";
+    }
 
     message.style.color = "red";
 
