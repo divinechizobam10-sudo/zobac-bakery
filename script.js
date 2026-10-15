@@ -14,10 +14,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     try {
-  fetch("https://zobac-bakery-8kqp.onrender.com/api/customer/session", {
+ fetch("https://zobac-bakery-8kqp.onrender.com/api/customer/session", {
     credentials: "include"
 })
-        });
 
         if (!response.ok) {
             throw new Error("Could not check login status.");
