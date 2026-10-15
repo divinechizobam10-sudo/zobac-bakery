@@ -1,24 +1,60 @@
-
 const express = require("express");
 const nodemailer = require("nodemailer");
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const fs = require("fs");
 const path = require("path");
-
 const session = require("express-session");
 const helmet = require("helmet");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const ORDERS_FILE = path.join(__dirname, "orders.json");
-const CUSTOMERS_FILE = path.join(__dirname, "customers.json");
-const REVIEWS_FILE = path.join(__dirname, "reviews.json");
-const INVENTORY_FILE = path.join(__dirname, "inventory.json");
+// Trust Render's HTTPS proxy.
+app.set("trust proxy", 1);
+
+// Allow the GitHub Pages website to communicate with Render.
+const FRONTEND_ORIGIN =
+    "https://divinechizobam10-sudo.github.io";
+
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+
+    if (origin === FRONTEND_ORIGIN) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+        res.setHeader("Vary", "Origin");
+    }
+
+    res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PATCH, PUT, DELETE, OPTIONS"
+    );
+
+    res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
+    );
+
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(204);
+    }
+
+    next();
+});
+
 app.use(helmet());
-console.log("SESSION_SECRET exists:", Boolean(process.env.SESSION_SECRET));
-console.log("SESSION_SECRET length:", process.env.SESSION_SECRET?.length || 0);
+
+console.log(
+    "SESSION_SECRET exists:",
+    Boolean(process.env.SESSION_SECRET)
+);
+
+console.log(
+    "SESSION_SECRET length:",
+    process.env.SESSION_SECRET?.length || 0
+);
+
 app.use(session({
     name: "zobacAdminSession",
     secret: process.env.SESSION_SECRET,
@@ -26,11 +62,17 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: true,
+        sameSite: "none",
         maxAge: 30 * 60 * 1000
     }
 }));
+
+const ORDERS_FILE = path.join(__dirname, "orders.json");
+const CUSTOMERS_FILE = path.join(__dirname, "customers.json");
+const REVIEWS_FILE = path.join(__dirname, "reviews.json");
+const INVENTORY_FILE = path.join(__dirname, "inventory.json");
+
 
 
 
