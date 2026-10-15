@@ -1989,17 +1989,18 @@ console.log("LOGIN FORM CONNECTED");
         message.textContent = "Logging in...";
 
 try {
-    const response = await fetch(
-        "https://zobac-bakery-8kqp.onrender.com/api/login",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: JSON.stringify({ email, password })
-        }
-    );
+const response = await fetch(
+    "https://zobac-bakery-8kqp.onrender.com/api/customer/profile",
+    {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({ name, phone })
+    }
+);
+
 
     const result = await response.json();
 
