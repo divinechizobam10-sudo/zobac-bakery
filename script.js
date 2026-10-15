@@ -1987,20 +1987,18 @@ console.log("LOGIN FORM CONNECTED");
         loginBtn.disabled = true;
         message.style.color = "";
         message.textContent = "Logging in...";
-
 try {
-const response = await fetch(
-    "https://zobac-bakery-8kqp.onrender.com/api/customer/profile",
-    {
-        method: "PATCH",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        credentials: "include",
-        body: JSON.stringify({ name, phone })
-    }
-);
-
+    const response = await fetch(
+        "https://zobac-bakery-8kqp.onrender.com/api/login",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({ email, password })
+        }
+    );
 
     const result = await response.json();
 
@@ -2029,9 +2027,6 @@ const response = await fetch(
 } finally {
     loginBtn.disabled = false;
 }
-
-    });
-});
 
 
 
