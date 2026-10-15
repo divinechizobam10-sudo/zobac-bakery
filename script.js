@@ -692,11 +692,12 @@ async function placeOrder() {
         orderMessage.style.color = "#b45309";
         orderMessage.style.fontWeight = "bold";
 
-    } finally {
-        placeOrderBtn.disabled = false;
-        placeOrderBtn.textContent = "Place Order";
-    }
+} finally {
+    registerBtn.disabled = false;
 }
+    });
+});
+
 
 const bankArrow = document.getElementById("bankDropdownBtn");
 
@@ -2310,42 +2311,39 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
-// ===============================
-// UPDATE NAVBAR LINKS
-// ===============================
 
- // UPDATE NAVBAR LINKS
+// UPDATE NAVBAR LINKS
 document.addEventListener("DOMContentLoaded", async function () {
     const registerLinks = document.querySelectorAll(
         '.nav-links a[href="register.html"], .nav-links a[href="account.html"]'
     );
 
     try {
-        const response = await fetch("/api/customer/session", {
-            credentials: "same-origin"
-        });
+        const response = await fetch(
+            "https://zobac-bakery-8kqp.onrender.com/api/customer/session",
+            {
+                credentials: "include"
+            }
+        );
+
+        const result = await response.json();
 
         if (!response.ok) {
             throw new Error("Could not check customer session.");
         }
 
-        const result = await response.json();
         const isLoggedIn = result.authenticated === true;
 
         registerLinks.forEach(function (link) {
-            if (isLoggedIn) {
-                link.href = "account.html";
-                link.textContent = "👤 Account";
-            } else {
-                link.href = "register.html";
-                link.textContent = "📝 Register";
-            }
+            link.href = isLoggedIn ? "account.html" : "register.html";
+            link.textContent = isLoggedIn ? "👤 Account" : "📝 Register";
         });
 
     } catch (error) {
         console.error("Could not update navbar links:", error);
     }
 });
+
 
 
 
