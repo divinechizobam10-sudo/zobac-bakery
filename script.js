@@ -2051,19 +2051,23 @@ document.addEventListener("DOMContentLoaded", async function () {
         return;
     }
 
-    try {
-        // Load the logged-in customer's details from the backend
-        const response = await fetch("/api/customer/session", {
-            credentials: "same-origin"
-        });
 
-        const result = await response.json();
-
-        if (!response.ok || result.authenticated !== true) {
-            savedName.textContent = "Please log in again";
-            savedPhone.textContent = "Please log in again";
-            return;
+try {
+    // Load the logged-in customer's details from the backend
+    const response = await fetch(
+        "https://zobac-bakery-8kqp.onrender.com/api/customer/session",
+        {
+            credentials: "include"
         }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.authenticated !== true) {
+        savedName.textContent = "Please log in again";
+        savedPhone.textContent = "Please log in again";
+        return;
+    }
 
         const customer = result.customer;
 
