@@ -14,8 +14,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     try {
-        const response = await fetch("/api/customer/session", {
-            credentials: "same-origin"
+  fetch("https://zobac-bakery-8kqp.onrender.com/api/customer/session", {
+    credentials: "include"
+})
         });
 
         if (!response.ok) {
