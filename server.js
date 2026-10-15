@@ -17,7 +17,8 @@ const CUSTOMERS_FILE = path.join(__dirname, "customers.json");
 const REVIEWS_FILE = path.join(__dirname, "reviews.json");
 const INVENTORY_FILE = path.join(__dirname, "inventory.json");
 app.use(helmet());
-
+console.log("SESSION_SECRET exists:", Boolean(process.env.SESSION_SECRET));
+console.log("SESSION_SECRET length:", process.env.SESSION_SECRET?.length || 0);
 app.use(session({
     name: "zobacAdminSession",
     secret: process.env.SESSION_SECRET,
