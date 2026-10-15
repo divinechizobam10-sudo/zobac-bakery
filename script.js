@@ -1,50 +1,40 @@
 
-// CHECK LOGIN STATUS
+
+ // CHECK LOGIN STATUS
 document.addEventListener("DOMContentLoaded", async function () {
     const loginBtn = document.getElementById("loginBtn");
     const accountMenu = document.querySelector(".account-menu");
 
-    // Hide account controls until the server confirms login.
-    if (loginBtn) {
-        loginBtn.style.display = "none";
-    }
-
-    if (accountMenu) {
-        accountMenu.style.display = "none";
-    }
+    if (loginBtn) loginBtn.style.display = "none";
+    if (accountMenu) accountMenu.style.display = "none";
 
     try {
- fetch("https://zobac-bakery-8kqp.onrender.com/api/customer/session", {
-    credentials: "include"
-})
-
-        if (!response.ok) {
-            throw new Error("Could not check login status.");
-        }
+        const response = await fetch(
+            "https://zobac-bakery-8kqp.onrender.com/api/customer/session",
+            { credentials: "include" }
+        );
 
         const result = await response.json();
-        const isLoggedIn = result.authenticated === true;
 
+        if (!response.ok) {
+            throw new Error(result.message || "Could not check login status.");
+        }
+
+        const isLoggedIn = result.authenticated === true;
         console.log("Login status:", isLoggedIn);
 
         if (loginBtn) {
-            loginBtn.style.display = isLoggedIn
-                ? "none"
-                : "inline-block";
+            loginBtn.style.display = isLoggedIn ? "none" : "inline-block";
         }
 
         if (accountMenu) {
-            accountMenu.style.display = isLoggedIn
-                ? "inline-block"
-                : "none";
+            accountMenu.style.display = isLoggedIn ? "inline-block" : "none";
         }
-
     } catch (error) {
         console.error("Could not check login status:", error);
 
-        if (loginBtn) {
-            loginBtn.style.display = "inline-block";
-        }
+        if (loginBtn) loginBtn.style.display = "inline-block";
+        if (accountMenu) accountMenu.style.display = "none";
     }
 });
 
@@ -2024,9 +2014,11 @@ try {
             ? "Cannot connect to the server. Please try again."
             : error.message;
 
-} finally {
-    loginBtn.disabled = false;
-}
+        } finally {
+            loginBtn.disabled = false;
+        }
+    });
+});
 
 
 
