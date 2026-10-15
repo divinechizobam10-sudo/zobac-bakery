@@ -1988,40 +1988,47 @@ console.log("LOGIN FORM CONNECTED");
         message.style.color = "";
         message.textContent = "Logging in...";
 
-        try {
-            const response = await fetch("/api/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                credentials: "same-origin",
-                body: JSON.stringify({ email, password })
-            });
-const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.message || "Login failed.");
-            }
-
-            localStorage.setItem("zobacLoginEmail", email);
-            localStorage.setItem("zobacCurrentEmail", email);
-            localStorage.removeItem("zobacLoggedIn");
-
-            message.style.color = "green";
-            message.textContent = "Login successful!";
-
-            window.location.href = "index.html";
-
-        } catch (error) {
-            console.error("Login failed:", error);
-
-            message.style.color = "red";
-            message.textContent =
-                error.message === "Failed to fetch"
-                    ? "Cannot connect to the server. Check that it is running."
-                    : error.message;
-        } finally {
-            loginBtn.disabled = false;
+try {
+    const response = await fetch(
+        "https://zobac-bakery-8kqp.onrender.com/api/login",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({ email, password })
         }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.message || "Login failed.");
+    }
+
+    localStorage.setItem("zobacLoginEmail", email);
+    localStorage.setItem("zobacCurrentEmail", email);
+    localStorage.setItem("zobacLoggedIn", "true");
+
+    message.style.color = "green";
+    message.textContent = "Login successful!";
+
+    window.location.href = "index.html";
+
+} catch (error) {
+    console.error("Login failed:", error);
+
+    message.style.color = "red";
+    message.textContent =
+        error.message === "Failed to fetch"
+            ? "Cannot connect to the server. Please try again."
+            : error.message;
+
+} finally {
+    loginBtn.disabled = false;
+}
+
     });
 });
 
