@@ -1,3 +1,18 @@
+
+const API_BASE_URL = "https://zobac-bakery-8kqp.onrender.com";
+
+// Send requests to Render and include the login session cookie.
+function apiFetch(path, options = {}) {
+    return fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        credentials: "include"
+    });
+}
+
+// =====================================
+// ORDER ELEMENTS AND FILTERS
+// =====================================
+
 const orderSearch = document.getElementById("orderSearch");
 const clearOrderSearch = document.getElementById("clearOrderSearch");
 const searchMessage = document.getElementById("searchMessage");
@@ -13,354 +28,524 @@ const pendingPayments = document.getElementById("pendingPayments");
 const ordersMessage = document.getElementById("ordersMessage");
 const ordersTable = document.getElementById("ordersTable");
 
+const statusFilter = document.getElementById("statusFilter");
+const paymentFilter = document.getElementById("paymentFilter");
+const dateFilter = document.getElementById("dateFilter");
+const clearFilters = document.getElementById("clearFilters");
+
+// =====================================
+// LOAD AND DISPLAY ORDERS
+// =====================================
+
 async function loadOrders() {
-ordersMessage.textContent = "Loading orders...";
-
-try {
-    const response = await fetch("/api/orders");
-    const orders = await response.json();
-
-    if (!response.ok) {
-        throw new Error(orders.message || "Could not load orders.");
+    if (ordersMessage) {
+        ordersMessage.textContent = "Loading orders...";
     }
 
-    totalOrders.textContent = orders.length;
+    try {
+        const response = await apiFetch("/api/orders");
+        const orders = await response.json();
 
-    pendingOrders.textContent = orders.filter(
-        order => order.status === "Order Received"
-    ).length;
-
-    preparingOrders.textContent = orders.filter(
-        order => order.status === "Preparing"
-    ).length;
-
-    deliveredOrders.textContent = orders.filter(
-        
-        order => order.status === "Delivered"
-    ).length;
-    
-    // Calculate sales from confirmed payments only
-const confirmedSales = orders
-    .filter(order => order.paymentStatus === "Payment Confirmed")
-    .reduce((sum, order) => sum + Number(order.total || 0), 0);
-
-// Calculate the value of orders with unconfirmed payments
-const unpaidTotal = orders
-    .filter(order => order.paymentStatus !== "Payment Confirmed")
-    .reduce((sum, order) => sum + Number(order.total || 0), 0);
-
-totalSales.textContent =
-    `₦${confirmedSales.toLocaleString("en-NG")}`;
-
-pendingPayments.textContent =
-    `₦${unpaidTotal.toLocaleString("en-NG")}`;
-    ordersTable.innerHTML = "";
-    const searchTerm = orderSearch
-    ? orderSearch.value.trim().toLowerCase()
-    : "";
-    
-const now = new Date();
-
-const todayRevenue = orders
-    .filter(order => {
-        if (order.paymentStatus !== "Payment Confirmed") {
-            return false;
+        if (!response.ok) {
+            throw new Error(
+                orders.message || "Could not load orders."
+            );
         }
 
-        if (!order.createdAt) {
-            return false;
+        if (!Array.isArray(orders)) {
+            throw new Error("The backend returned an invalid orders list.");
         }
 
-        const orderDate = new Date(order.createdAt);
-
-        return !Number.isNaN(orderDate.getTime()) &&
-            orderDate.getFullYear() === now.getFullYear() &&
-            orderDate.getMonth() === now.getMonth() &&
-            orderDate.getDate() === now.getDate();
-    })
-    .reduce((sum, order) => sum + Number(order.total || 0), 0);
-
-const monthlyRevenue = orders
-    .filter(order => {
-        if (order.paymentStatus !== "Payment Confirmed") {
-            return false;
+        if (totalOrders) {
+            totalOrders.textContent = orders.length;
         }
 
-        if (!order.createdAt) {
-            return false;
+        if (pendingOrders) {
+            pendingOrders.textContent = orders.filter(
+                order => order.status === "Order Received"
+            ).length;
         }
 
-        const orderDate = new Date(order.createdAt);
+        if (preparingOrders) {
+            preparingOrders.textContent = orders.filter(
+                order => order.status === "Preparing"
+            ).length;
+        }
 
-        return !Number.isNaN(orderDate.getTime()) &&
-            orderDate.getFullYear() === now.getFullYear() &&
-            orderDate.getMonth() === now.getMonth();
-    })
-    .reduce((sum, order) => sum + Number(order.total || 0), 0);
+        if (deliveredOrders) {
+            deliveredOrders.textContent = orders.filter(
+                order => order.status === "Delivered"
+            ).length;
+        }
 
-if (todaySales) {
-    todaySales.textContent =
-        `₦${todayRevenue.toLocaleString("en-NG")}`;
-}
+        // Calculate confirmed sales.
+        const confirmedSales = orders
+            .filter(order => order.paymentStatus === "Payment Confirmed")
+            .reduce((sum, order) => sum + Number(order.total || 0), 0);
 
-if (monthlySales) {
-    monthlySales.textContent =
-        `₦${monthlyRevenue.toLocaleString("en-NG")}`;
-}
+        // Calculate orders with unconfirmed payments.
+        const unpaidTotal = orders
+            .filter(order => order.paymentStatus !== "Payment Confirmed")
+            .reduce((sum, order) => sum + Number(order.total || 0), 0);
 
-const weeklySalesChart = document.getElementById("weeklySalesChart");
+        if (totalSales) {
+            totalSales.textContent =
+                `₦${confirmedSales.toLocaleString("en-NG")}`;
+        }
 
-if (weeklySalesChart) {
-    const today = new Date();
-    const days = [];
+        if (pendingPayments) {
+            pendingPayments.textContent =
+                `₦${unpaidTotal.toLocaleString("en-NG")}`;
+        }
 
-    for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
+        if (ordersTable) {
+            ordersTable.innerHTML = "";
+        }
 
-        const dateKey = [
-            date.getFullYear(),
-            String(date.getMonth() + 1).padStart(2, "0"),
-            String(date.getDate()).padStart(2, "0")
-        ].join("-");
+        const searchTerm = orderSearch
+            ? orderSearch.value.trim().toLowerCase()
+            : "";
 
-        const dayRevenue = orders
+        const now = new Date();
+
+        // Today's confirmed sales.
+        const todayRevenue = orders
             .filter(order => {
-                if (order.paymentStatus !== "Payment Confirmed") {
+                if (
+                    order.paymentStatus !== "Payment Confirmed" ||
+                    !order.createdAt
+                ) {
                     return false;
                 }
 
-                if (!order.createdAt) return false;
-
                 const orderDate = new Date(order.createdAt);
 
-                if (Number.isNaN(orderDate.getTime())) return false;
-
-                const orderKey = [
-                    orderDate.getFullYear(),
-                    String(orderDate.getMonth() + 1).padStart(2, "0"),
-                    String(orderDate.getDate()).padStart(2, "0")
-                ].join("-");
-
-                return orderKey === dateKey;
+                return (
+                    !Number.isNaN(orderDate.getTime()) &&
+                    orderDate.getFullYear() === now.getFullYear() &&
+                    orderDate.getMonth() === now.getMonth() &&
+                    orderDate.getDate() === now.getDate()
+                );
             })
             .reduce((sum, order) => sum + Number(order.total || 0), 0);
 
-        days.push({
-            name: date.toLocaleDateString("en-NG", {
-                weekday: "short"
-            }),
-            amount: dayRevenue
-        });
-    }
-
-    const maxRevenue = Math.max(...days.map(day => day.amount), 1);
-
-    weeklySalesChart.innerHTML = days.map(day => {
-        const height = day.amount > 0
-            ? Math.max((day.amount / maxRevenue) * 100, 5)
-            : 0;
-
-        return `
-            <div class="sales-day">
-                <span class="sales-amount">
-                    ₦${day.amount.toLocaleString("en-NG")}
-                </span>
-                <div class="sales-bar-area">
-                    <div
-                        class="sales-bar"
-                        style="height: ${height}%"
-                        title="₦${day.amount.toLocaleString("en-NG")}"
-                    ></div>
-                </div>
-                <span class="sales-day-name">${day.name}</span>
-            </div>
-        `;
-    }).join("");
-}
-
-
-
-const filteredOrders = orders.filter(order => {
-    const orderNumber = String(order.orderNumber || "").toLowerCase();
-
-    const matchesSearch = orderNumber.includes(searchTerm);
-
-    const matchesStatus =
-        !statusFilter ||
-        !statusFilter.value ||
-        order.status === statusFilter.value;
-
-    const currentPaymentStatus =
-        order.paymentStatus || "Payment Pending";
-
-    const matchesPayment =
-        !paymentFilter ||
-        !paymentFilter.value ||
-        currentPaymentStatus === paymentFilter.value ||
-        (paymentFilter.value === "Pending" &&
-            currentPaymentStatus === "Payment Pending");
-
-    const matchesDate =
-        !dateFilter ||
-        !dateFilter.value ||
-        order.deliveryDate === dateFilter.value;
-
-    return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesPayment &&
-        matchesDate
-    );
-});
-
-
-if (searchMessage) {
-    searchMessage.textContent = searchTerm
-        ? `${filteredOrders.length} order(s) found`
-        : "";
-}
-    if (orders.length === 0) {
-        ordersMessage.textContent = "No orders yet.";
-        return;
-    }
-
-    ordersMessage.textContent = "";
-
-   filteredOrders.slice().reverse().forEach(order => {
-        const row = document.createElement("tr");
-
-        // Order number
-        const orderCell = document.createElement("td");
-        orderCell.textContent = order.orderNumber || "—";
-        row.appendChild(orderCell);
-
-        // Customer name
-        const nameCell = document.createElement("td");
-        nameCell.textContent = order.name || "—";
-        row.appendChild(nameCell);
-
-        // Customer phone
-        const phoneCell = document.createElement("td");
-        phoneCell.textContent = order.phone || "—";
-        row.appendChild(phoneCell);
-
-       // Delivery address
-        const addressCell = document.createElement("td");
-        addressCell.textContent = order.address || "Address not provided";
-        row.appendChild(addressCell);
-        
-
-        // Products bought
-        const productsCell = document.createElement("td");
-
-        if (Array.isArray(order.items) && order.items.length > 0) {
-            order.items.forEach(item => {
-                const product = document.createElement("div");
-
-                product.style.marginBottom = "10px";
-
-                const productName = document.createElement("strong");
-                productName.textContent =
-                    `${item.name || "Product"} × ${Number(item.quantity) || 1}`;
-
-                product.appendChild(productName);
-
-                
-        
-                // Show custom cake, pizza or shawarma details
-                if (item.customization) {
-                    const details = document.createElement("div");
-
-                    details.style.fontSize = "12px";
-                    details.style.marginTop = "4px";
-
-                    const customization = item.customization;
-
-                    const detailTexts = [];
-
-                    Object.entries(customization).forEach(([key, value]) => {
-                        if (
-                            value !== null &&
-                            value !== undefined &&
-                            value !== ""
-                        ) {
-                            const label = key
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, letter => letter.toUpperCase());
-
-                            const displayValue = Array.isArray(value)
-                                ? value.join(", ")
-                                : typeof value === "object"
-                                    ? JSON.stringify(value)
-                                    : String(value);
-
-                            detailTexts.push(`${label}: ${displayValue}`);
-                        }
-                    });
-
-                    details.textContent = detailTexts.join(" | ");
-
-                    if (detailTexts.length > 0) {
-                        product.appendChild(details);
-                    }
+        // This month's confirmed sales.
+        const monthlyRevenue = orders
+            .filter(order => {
+                if (
+                    order.paymentStatus !== "Payment Confirmed" ||
+                    !order.createdAt
+                ) {
+                    return false;
                 }
 
-                productsCell.appendChild(product);
-            });
-        } else {
-            productsCell.textContent = "Product details unavailable";
+                const orderDate = new Date(order.createdAt);
+
+                return (
+                    !Number.isNaN(orderDate.getTime()) &&
+                    orderDate.getFullYear() === now.getFullYear() &&
+                    orderDate.getMonth() === now.getMonth()
+                );
+            })
+            .reduce((sum, order) => sum + Number(order.total || 0), 0);
+
+        if (todaySales) {
+            todaySales.textContent =
+                `₦${todayRevenue.toLocaleString("en-NG")}`;
         }
 
-        row.appendChild(productsCell);
+        if (monthlySales) {
+            monthlySales.textContent =
+                `₦${monthlyRevenue.toLocaleString("en-NG")}`;
+        }
 
-        // Delivery date
-        const dateCell = document.createElement("td");
-        dateCell.textContent = order.deliveryDate || "—";
-        row.appendChild(dateCell);
-        
-        // Payment method
-        const paymentMethodCell = document.createElement("td");
-        paymentMethodCell.textContent =
-            order.paymentMethod || "Not recorded";
-        row.appendChild(paymentMethodCell);
+        // =====================================
+        // WEEKLY SALES CHART
+        // =====================================
 
-        // Payment status and confirmation button
-        const paymentCell = document.createElement("td");
+        const weeklySalesChart =
+            document.getElementById("weeklySalesChart");
 
-        const paymentLabel = document.createElement("p");
-        paymentLabel.textContent =
-            order.paymentStatus || "Payment Pending";
+        if (weeklySalesChart) {
+            const today = new Date();
+            const days = [];
 
-        paymentCell.appendChild(paymentLabel);
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
 
-        if (
-            (order.paymentStatus || "Payment Pending") !==
-            "Payment Confirmed"
-        ) {
-            const confirmPaymentBtn =
-                document.createElement("button");
+                const dateKey = [
+                    date.getFullYear(),
+                    String(date.getMonth() + 1).padStart(2, "0"),
+                    String(date.getDate()).padStart(2, "0")
+                ].join("-");
 
-            confirmPaymentBtn.textContent = "Confirm Payment";
-            confirmPaymentBtn.style.background = "#198754";
-            confirmPaymentBtn.style.color = "white";
-            confirmPaymentBtn.style.border = "none";
-            confirmPaymentBtn.style.padding = "8px";
-            confirmPaymentBtn.style.borderRadius = "6px";
-            confirmPaymentBtn.style.cursor = "pointer";
+                const dayRevenue = orders
+                    .filter(order => {
+                        if (
+                            order.paymentStatus !== "Payment Confirmed" ||
+                            !order.createdAt
+                        ) {
+                            return false;
+                        }
 
-            confirmPaymentBtn.addEventListener("click", async () => {
-                const confirmed = window.confirm(
-                    "Have you verified that the money was received in the bakery's bank account?"
+                        const orderDate = new Date(order.createdAt);
+
+                        if (Number.isNaN(orderDate.getTime())) {
+                            return false;
+                        }
+
+                        const orderKey = [
+                            orderDate.getFullYear(),
+                            String(orderDate.getMonth() + 1).padStart(2, "0"),
+                            String(orderDate.getDate()).padStart(2, "0")
+                        ].join("-");
+
+                        return orderKey === dateKey;
+                    })
+                    .reduce(
+                        (sum, order) => sum + Number(order.total || 0),
+                        0
+                    );
+
+                days.push({
+                    name: date.toLocaleDateString("en-NG", {
+                        weekday: "short"
+                    }),
+                    amount: dayRevenue
+                });
+            }
+
+            const maxRevenue = Math.max(
+                ...days.map(day => day.amount),
+                1
+            );
+
+            weeklySalesChart.innerHTML = days.map(day => {
+                const height = day.amount > 0
+                    ? Math.max((day.amount / maxRevenue) * 100, 5)
+                    : 0;
+
+                return `
+                    <div class="sales-day">
+                        <span class="sales-amount">
+                            ₦${day.amount.toLocaleString("en-NG")}
+                        </span>
+
+                        <div class="sales-bar-area">
+                            <div
+                                class="sales-bar"
+                                style="height: ${height}%"
+                                title="₦${day.amount.toLocaleString("en-NG")}"
+                            ></div>
+                        </div>
+
+                        <span class="sales-day-name">${day.name}</span>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // =====================================
+        // FILTER ORDERS
+        // =====================================
+
+        const filteredOrders = orders.filter(order => {
+            const orderNumber = String(
+                order.orderNumber || ""
+            ).toLowerCase();
+
+            const matchesSearch = orderNumber.includes(searchTerm);
+
+            const matchesStatus =
+                !statusFilter ||
+                !statusFilter.value ||
+                order.status === statusFilter.value;
+
+            const currentPaymentStatus =
+                order.paymentStatus || "Payment Pending";
+
+            const matchesPayment =
+                !paymentFilter ||
+                !paymentFilter.value ||
+                currentPaymentStatus === paymentFilter.value ||
+                (
+                    paymentFilter.value === "Pending" &&
+                    currentPaymentStatus === "Payment Pending"
                 );
 
-                if (!confirmed) return;
+            const matchesDate =
+                !dateFilter ||
+                !dateFilter.value ||
+                order.deliveryDate === dateFilter.value;
 
-                confirmPaymentBtn.disabled = true;
-                confirmPaymentBtn.textContent = "Saving...";
+            return (
+                matchesSearch &&
+                matchesStatus &&
+                matchesPayment &&
+                matchesDate
+            );
+        });
+
+        if (searchMessage) {
+            searchMessage.textContent = searchTerm
+                ? `${filteredOrders.length} order(s) found`
+                : "";
+        }
+
+        if (orders.length === 0) {
+            if (ordersMessage) {
+                ordersMessage.textContent = "No orders yet.";
+            }
+            return;
+        }
+
+        if (filteredOrders.length === 0) {
+            if (ordersMessage) {
+                ordersMessage.textContent =
+                    "No orders match your search or filters.";
+            }
+            return;
+        }
+
+        if (ordersMessage) {
+            ordersMessage.textContent = "";
+        }
+
+        // Show newest orders first.
+        filteredOrders.slice().reverse().forEach(order => {
+            const row = document.createElement("tr");
+
+            // Order number.
+            const orderCell = document.createElement("td");
+            orderCell.textContent = order.orderNumber || "—";
+            row.appendChild(orderCell);
+
+            // Customer name.
+            const nameCell = document.createElement("td");
+            nameCell.textContent = order.name || "—";
+            row.appendChild(nameCell);
+
+            // Customer phone.
+            const phoneCell = document.createElement("td");
+            phoneCell.textContent = order.phone || "—";
+            row.appendChild(phoneCell);
+
+            // Delivery address.
+            const addressCell = document.createElement("td");
+            addressCell.textContent =
+                order.address || "Address not provided";
+            row.appendChild(addressCell);
+
+            // =====================================
+            // PRODUCTS BOUGHT AND CUSTOM DETAILS
+            // =====================================
+
+            const productsCell = document.createElement("td");
+
+            if (Array.isArray(order.items) && order.items.length > 0) {
+                order.items.forEach(item => {
+                    const product = document.createElement("div");
+                    product.style.marginBottom = "10px";
+
+                    const productName = document.createElement("strong");
+                    productName.textContent =
+                        `${item.name || "Product"} × ${Number(item.quantity) || 1}`;
+
+                    product.appendChild(productName);
+
+                    if (item.customization) {
+                        const details = document.createElement("div");
+
+                        details.style.fontSize = "12px";
+                        details.style.marginTop = "4px";
+
+                        const detailTexts = [];
+
+                        Object.entries(item.customization).forEach(
+                            ([key, value]) => {
+                                if (
+                                    value !== null &&
+                                    value !== undefined &&
+                                    value !== ""
+                                ) {
+                                    const label = key
+                                        .replace(/([A-Z])/g, " $1")
+                                        .replace(/^./, letter =>
+                                            letter.toUpperCase()
+                                        );
+
+                                    const displayValue = Array.isArray(value)
+                                        ? value.join(", ")
+                                        : typeof value === "object"
+                                            ? JSON.stringify(value)
+                                            : String(value);
+
+                                    detailTexts.push(
+                                        `${label}: ${displayValue}`
+                                    );
+                                }
+                            }
+                        );
+
+                        details.textContent = detailTexts.join(" | ");
+
+                        if (detailTexts.length > 0) {
+                            product.appendChild(details);
+                        }
+                    }
+
+                    productsCell.appendChild(product);
+                });
+            } else {
+                productsCell.textContent =
+                    "Product details unavailable";
+            }
+
+            row.appendChild(productsCell);
+
+            // Delivery date.
+            const dateCell = document.createElement("td");
+            dateCell.textContent = order.deliveryDate || "—";
+            row.appendChild(dateCell);
+
+            // Payment method.
+            const paymentMethodCell = document.createElement("td");
+            paymentMethodCell.textContent =
+                order.paymentMethod || "Not recorded";
+            row.appendChild(paymentMethodCell);
+
+            // =====================================
+            // PAYMENT STATUS AND CONFIRMATION
+            // =====================================
+
+            const paymentCell = document.createElement("td");
+
+            const paymentLabel = document.createElement("p");
+            paymentLabel.textContent =
+                order.paymentStatus || "Payment Pending";
+
+            paymentCell.appendChild(paymentLabel);
+
+            if (
+                (order.paymentStatus || "Payment Pending") !==
+                "Payment Confirmed"
+            ) {
+                const confirmPaymentBtn =
+                    document.createElement("button");
+
+                confirmPaymentBtn.textContent = "Confirm Payment";
+                confirmPaymentBtn.style.background = "#198754";
+                confirmPaymentBtn.style.color = "white";
+                confirmPaymentBtn.style.border = "none";
+                confirmPaymentBtn.style.padding = "8px";
+                confirmPaymentBtn.style.borderRadius = "6px";
+                confirmPaymentBtn.style.cursor = "pointer";
+
+                confirmPaymentBtn.addEventListener(
+                    "click",
+                    async () => {
+                        const confirmed = window.confirm(
+                            "Have you verified that the money was received in the bakery's bank account?"
+                        );
+
+                        if (!confirmed) return;
+
+                        confirmPaymentBtn.disabled = true;
+                        confirmPaymentBtn.textContent = "Saving...";
+
+                        try {
+                            const response = await apiFetch(
+                                `/api/orders/${encodeURIComponent(order.orderNumber)}`,
+                                {
+                                    method: "PATCH",
+                                    headers: {
+                                        "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify({
+                                        paymentStatus: "Payment Confirmed"
+                                    })
+                                }
+                            );
+
+                            const result = await response.json();
+
+                            if (!response.ok) {
+                                throw new Error(
+                                    result.message ||
+                                    "Could not confirm payment."
+                                );
+                            }
+
+                            if (ordersMessage) {
+                                ordersMessage.textContent =
+                                    "Payment confirmed and saved successfully!";
+                            }
+
+                            await loadOrders();
+
+                        } catch (error) {
+                            if (ordersMessage) {
+                                ordersMessage.textContent = error.message;
+                            }
+
+                            confirmPaymentBtn.disabled = false;
+                            confirmPaymentBtn.textContent =
+                                "Confirm Payment";
+                        }
+                    }
+                );
+
+                paymentCell.appendChild(confirmPaymentBtn);
+            }
+
+            row.appendChild(paymentCell);
+
+            // =====================================
+            // ORDER STATUS DROPDOWN
+            // =====================================
+
+            const statusCell = document.createElement("td");
+            const statusSelect = document.createElement("select");
+
+            [
+                "Order Received",
+                "Preparing",
+                "Out for Delivery",
+                "Delivered"
+            ].forEach(status => {
+                const option = document.createElement("option");
+                option.value = status;
+                option.textContent = status;
+                statusSelect.appendChild(option);
+            });
+
+            statusSelect.value = order.status || "Order Received";
+            statusCell.appendChild(statusSelect);
+            row.appendChild(statusCell);
+
+            // Order total.
+            const totalCell = document.createElement("td");
+            totalCell.textContent =
+                `₦${Number(order.total || 0).toLocaleString("en-NG")}`;
+            row.appendChild(totalCell);
+
+            // =====================================
+            // UPDATE ORDER STATUS
+            // =====================================
+
+            const actionCell = document.createElement("td");
+            actionCell.classList.add("action-buttons");
+
+            const saveBtn = document.createElement("button");
+            saveBtn.textContent = "Update Status";
+
+            saveBtn.addEventListener("click", async () => {
+                saveBtn.disabled = true;
+                saveBtn.textContent = "Saving...";
 
                 try {
-                    const response = await fetch(
+                    const response = await apiFetch(
                         `/api/orders/${encodeURIComponent(order.orderNumber)}`,
                         {
                             method: "PATCH",
@@ -368,7 +553,7 @@ if (searchMessage) {
                                 "Content-Type": "application/json"
                             },
                             body: JSON.stringify({
-                                paymentStatus: "Payment Confirmed"
+                                status: statusSelect.value
                             })
                         }
                     );
@@ -377,301 +562,249 @@ if (searchMessage) {
 
                     if (!response.ok) {
                         throw new Error(
-                            result.message || "Could not confirm payment."
+                            result.message || "Update failed."
                         );
                     }
 
-                  
-order.paymentStatus = "Payment Confirmed";
+                    order.status = statusSelect.value;
 
-ordersMessage.textContent =
-    "Payment confirmed and saved successfully!";
-
-// Reload orders and refresh the sales figures
-await loadOrders();
-
-ordersMessage.textContent =
-    "Payment confirmed and saved successfully!";
-
+                    if (ordersMessage) {
+                        ordersMessage.textContent =
+                            "Order status updated successfully!";
+                    }
                 } catch (error) {
-                    ordersMessage.textContent = error.message;
-                    confirmPaymentBtn.disabled = false;
-                    confirmPaymentBtn.textContent = "Confirm Payment";
+                    if (ordersMessage) {
+                        ordersMessage.textContent = error.message;
+                    }
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = "Update Status";
                 }
             });
 
-            paymentCell.appendChild(confirmPaymentBtn);
+            actionCell.appendChild(saveBtn);
+
+            // =====================================
+            // REPLY ON WHATSAPP
+            // =====================================
+
+            const whatsappBtn = document.createElement("button");
+            whatsappBtn.textContent = "Reply on WhatsApp";
+            whatsappBtn.style.background = "#25D366";
+            whatsappBtn.style.color = "white";
+            whatsappBtn.style.border = "none";
+            whatsappBtn.style.padding = "8px";
+            whatsappBtn.style.borderRadius = "6px";
+            whatsappBtn.style.cursor = "pointer";
+            whatsappBtn.style.marginTop = "6px";
+
+            whatsappBtn.addEventListener("click", () => {
+                let phone = String(order.phone || "").replace(/\D/g, "");
+
+                // Convert Nigerian numbers to international format.
+                if (phone.startsWith("0")) {
+                    phone = "234" + phone.slice(1);
+                }
+
+                if (!phone || phone.length < 10) {
+                    alert(
+                        "This customer's phone number is missing or invalid."
+                    );
+                    return;
+                }
+
+                const message =
+                    `Hello ${order.name || "Customer"}! 👋\n\n` +
+                    `Thank you for choosing Zobac Bakery! 💜🧡\n` +
+                    `We have received your order ${order.orderNumber || ""}.\n\n` +
+                    `We will keep you updated on your order.\n` +
+                    `Start your day with joy!`;
+
+                const whatsappURL =
+                    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+                window.open(whatsappURL, "_blank");
+            });
+
+            actionCell.appendChild(whatsappBtn);
+
+            // =====================================
+            // VIEW ORDER RECEIPT
+            // =====================================
+
+            const viewDetailsBtn = document.createElement("button");
+            viewDetailsBtn.textContent = "View Details";
+            viewDetailsBtn.style.background = "#702BD1";
+            viewDetailsBtn.style.color = "white";
+            viewDetailsBtn.style.border = "none";
+            viewDetailsBtn.style.padding = "8px";
+            viewDetailsBtn.style.borderRadius = "6px";
+            viewDetailsBtn.style.cursor = "pointer";
+            viewDetailsBtn.style.marginTop = "6px";
+
+            viewDetailsBtn.addEventListener("click", () => {
+                const receiptModal =
+                    document.getElementById("receiptModal");
+
+                const receiptDetails =
+                    document.getElementById("receiptDetails");
+
+                if (!receiptModal || !receiptDetails) {
+                    alert(
+                        "Receipt popup elements were not found. Check admin.html."
+                    );
+                    return;
+                }
+
+                let productsHTML = "";
+
+                (order.items || []).forEach((item, index) => {
+                    const safeName = escapeHTML(item.name || "Product");
+                    const safeCustomization = item.customization
+                        ? `<p>Customization: ${escapeHTML(
+                            JSON.stringify(item.customization)
+                        )}</p>`
+                        : "";
+
+                    productsHTML += `
+                        <div class="receipt-product">
+                            <strong>
+                                ${index + 1}. ${safeName}
+                            </strong>
+
+                            <p>Quantity: ${Number(item.quantity) || 1}</p>
+
+                            <p>Price: ₦${Number(item.price || 0).toLocaleString("en-NG")}</p>
+
+                            ${safeCustomization}
+                        </div>
+                    `;
+                });
+
+                receiptDetails.innerHTML = `
+                    <div style="text-align:center; padding:0 0 12px;">
+                        <img
+                            src="logo.jpg"
+                            alt="Zobac Bakery Logo"
+                            style="
+                                width:100px;
+                                height:100px;
+                                object-fit:contain;
+                                display:block;
+                                margin:0 auto 10px;
+                            "
+                        >
+                    </div>
+
+                    <h2 style="text-align:center; color:#702BD1;">
+                        Zobac Bakery
+                    </h2>
+
+                    <p style="text-align:center; font-weight:bold;">
+                        Start Your Day With Joy
+                    </p>
+
+                    <p style="text-align:center;">Order Receipt</p>
+
+                    <hr>
+
+                    <h3>Customer Details</h3>
+
+                    <p><strong>Order Number:</strong> ${escapeHTML(order.orderNumber || "—")}</p>
+                    <p><strong>Customer:</strong> ${escapeHTML(order.name || "—")}</p>
+                    <p><strong>Phone:</strong> ${escapeHTML(order.phone || "—")}</p>
+                    <p><strong>Delivery Address:</strong> ${escapeHTML(order.address || "—")}</p>
+                    <p><strong>Delivery Date:</strong> ${escapeHTML(order.deliveryDate || "—")}</p>
+
+                    <hr>
+
+                    <h3>Payment Details</h3>
+
+                    <p><strong>Payment Method:</strong> ${escapeHTML(order.paymentMethod || "—")}</p>
+                    <p><strong>Payment Status:</strong> ${escapeHTML(order.paymentStatus || "Payment Pending")}</p>
+                    <p><strong>Order Status:</strong> ${escapeHTML(order.status || "Order Received")}</p>
+
+                    <hr>
+
+                    <h3>Products Ordered</h3>
+
+                    ${productsHTML || "<p>No product details available.</p>"}
+
+                    <h3 style="
+                        text-align:right;
+                        color:#702BD1;
+                        padding:15px;
+                        border-radius:10px;
+                        margin-top:20px;
+                    ">
+                        Total: ₦${Number(order.total || 0).toLocaleString("en-NG")}
+                    </h3>
+
+                    <hr>
+
+                    <p style="text-align:center; font-weight:bold;">
+                        Thank you for choosing Zobac Bakery!
+                    </p>
+
+                    <p style="text-align:center; font-size:12px;">
+                        Start Your Day With Joy 💜🧡
+                    </p>
+                `;
+
+                receiptModal.style.display = "flex";
+            });
+
+            actionCell.appendChild(viewDetailsBtn);
+            row.appendChild(actionCell);
+
+            if (ordersTable) {
+                ordersTable.appendChild(row);
+            }
+        });
+
+    } catch (error) {
+        if (ordersMessage) {
+            ordersMessage.textContent =
+                error.message || "Could not load orders. Check the backend.";
         }
 
-        row.appendChild(paymentCell);
-
-        // Order status dropdown
-        const statusCell = document.createElement("td");
-        const statusSelect = document.createElement("select");
-
-        [
-            "Order Received",
-            "Preparing",
-            "Out for Delivery",
-            "Delivered"
-        ].forEach(status => {
-            const option = document.createElement("option");
-            option.value = status;
-            option.textContent = status;
-            statusSelect.appendChild(option);
-        });
-
-        statusSelect.value = order.status || "Order Received";
-        statusCell.appendChild(statusSelect);
-        row.appendChild(statusCell);
-
-        // Order total
-        const totalCell = document.createElement("td");
-
-        totalCell.textContent =
-            `₦${Number(order.total || 0).toLocaleString("en-NG")}`;
-
-        row.appendChild(totalCell);
-
-        // Update status button
-        const actionCell = document.createElement("td");
-        actionCell.classList.add("action-buttons");
-        const saveBtn = document.createElement("button");
-
-        saveBtn.textContent = "Update Status" ;
-
-        saveBtn.addEventListener("click", async () => {
-            saveBtn.disabled = true;
-            saveBtn.textContent = "Saving...";
-
-            try {
-                const response = await fetch(
-                    `/api/orders/${encodeURIComponent(order.orderNumber)}`,
-                    {
-                        method: "PATCH",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            status: statusSelect.value
-                        })
-                    }
-                );
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(
-                        result.message || "Update failed."
-                    );
-                }
-
-                order.status = statusSelect.value;
-                ordersMessage.textContent =
-                    "Order status updated successfully!";
-            } catch (error) {
-                ordersMessage.textContent = error.message;
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.textContent = "Update Status";
-            }
-        });
-
-        actionCell.appendChild(saveBtn);
-        row.appendChild(actionCell);
-        
-        // WhatsApp response button
-        const whatsappBtn = document.createElement("button");
-        whatsappBtn.textContent = "Reply on WhatsApp";
-        whatsappBtn.style.background = "#25D366";
-        whatsappBtn.style.color = "white";
-        whatsappBtn.style.border = "none";
-        whatsappBtn.style.padding = "8px";
-        whatsappBtn.style.borderRadius = "6px";
-        whatsappBtn.style.cursor = "pointer";
-        whatsappBtn.style.marginTop = "6px";
-
-        whatsappBtn.addEventListener("click", () => {
-            let phone = String(order.phone || "").replace(/\D/g, "");
-
-            // Convert Nigerian numbers to international format.
-            if (phone.startsWith("0")) {
-                phone = "234" + phone.slice(1);
-            }
-
-            if (!phone || phone.length < 10) {
-                alert("This customer's phone number is missing or invalid.");
-                return;
-            }
-
-            const message =
-                `Hello ${order.name || "Customer"}! 👋\n\n` +
-                `Thank you for choosing Zobac Bakery! 💜🧡\n` +
-                `We have received your order ${order.orderNumber || ""}.\n\n` +
-                `We will keep you updated on your order.\n` +
-                `Start your day with joy!`;
-
-            const whatsappURL =
-                `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-
-            window.open(whatsappURL, "_blank");
-        });
-
-        actionCell.appendChild(whatsappBtn);
-        
-
-const viewDetailsBtn = document.createElement("button");
-viewDetailsBtn.textContent = "View Details";
-viewDetailsBtn.style.background = "#702BD1";
-viewDetailsBtn.style.color = "white";
-viewDetailsBtn.style.border = "none";
-viewDetailsBtn.style.padding = "8px";
-viewDetailsBtn.style.borderRadius = "6px";
-viewDetailsBtn.style.cursor = "pointer";
-viewDetailsBtn.style.marginTop = "6px";
-
-viewDetailsBtn.addEventListener("click", () => {
-    const receiptModal = document.getElementById("receiptModal");
-    const receiptDetails = document.getElementById("receiptDetails");
-
-    if (!receiptModal || !receiptDetails) {
-        alert("Receipt popup elements were not found. Check admin.html.");
-        return;
+        console.error("Error loading orders:", error);
     }
-
-    let productsHTML = "";
-
-    (order.items || []).forEach((item, index) => {
-        productsHTML += `
-            <div class="receipt-product">
-                <strong>
-                    ${index + 1}. ${item.name || "Product"}
-                </strong>
-
-                <p>Quantity: ${Number(item.quantity) || 1}</p>
-
-                <p>Price: ₦${Number(item.price || 0).toLocaleString("en-NG")}</p>
-
-                ${
-                    item.customization
-                        ? `<p>Customization: ${
-                            JSON.stringify(item.customization)
-                        }</p>`
-                        : ""
-                }
-            </div>
-        `;
-    });
-
-    receiptDetails.innerHTML = `
-        <div style="text-align:center; padding:0 0 12px;">
-            <img
-                src="logo.jpg"
-                alt="Zobac Bakery Logo"
-                style="
-                    width:100px;
-                    height:100px;
-                    object-fit:contain;
-                    display:block;
-                    margin:0 auto 10px;
-                "
-            >
-        </div>
-
-        <h2 style="text-align:center; color:#702BD1;">
-            Zobac Bakery
-        </h2>
-
-        <p style="text-align:center; font-weight:bold;">
-            Start Your Day With Joy
-        </p>
-
-        <p style="text-align:center;">Order Receipt</p>
-
-        <hr>
-
-        <h3>Customer Details</h3>
-
-        <p><strong>Order Number:</strong> ${order.orderNumber || "—"}</p>
-        <p><strong>Customer:</strong> ${order.name || "—"}</p>
-        <p><strong>Phone:</strong> ${order.phone || "—"}</p>
-        <p><strong>Delivery Address:</strong> ${order.address || "—"}</p>
-        <p><strong>Delivery Date:</strong> ${order.deliveryDate || "—"}</p>
-
-        <hr>
-
-        <h3>Payment Details</h3>
-
-        <p><strong>Payment Method:</strong> ${order.paymentMethod || "—"}</p>
-        <p><strong>Payment Status:</strong> ${order.paymentStatus || "Payment Pending"}</p>
-        <p><strong>Order Status:</strong> ${order.status || "Order Received"}</p>
-
-        <hr>
-
-        <h3>Products Ordered</h3>
-
-        ${productsHTML || "<p>No product details available.</p>"}
-
-        <h3 style="
-            text-align:right;
-            color:#702BD1;
-            padding:15px;
-            border-radius:10px;
-            margin-top:20px;
-        ">
-            Total: ₦${Number(order.total || 0).toLocaleString("en-NG")}
-        </h3>
-
-        <hr>
-
-        <p style="text-align:center; font-weight:bold;">
-            Thank you for choosing Zobac Bakery!
-        </p>
-
-        <p style="text-align:center; font-size:12px;">
-            Start Your Day With Joy 💜🧡
-        </p>
-    `;
-
-    // OPEN THE RECEIPT POPUP
-    receiptModal.style.display = "flex";
-});
-
-actionCell.appendChild(viewDetailsBtn);
-
-
-        ordersTable.appendChild(row);
-    });
-} catch (error) {
-    ordersMessage.textContent =
-        "Could not load orders. Check that the backend is running.";
-
-    console.error(error);
 }
 
-
+// Escape HTML before inserting customer-provided text into the receipt.
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[character]);
 }
 
-refreshBtn.addEventListener("click", loadOrders);
+// =====================================
+// ORDER SEARCH AND FILTER EVENTS
+// =====================================
+
+if (refreshBtn) {
+    refreshBtn.addEventListener("click", loadOrders);
+}
+
 if (orderSearch) {
     orderSearch.addEventListener("input", loadOrders);
 }
 
 if (clearOrderSearch) {
     clearOrderSearch.addEventListener("click", () => {
-        orderSearch.value = "";
+        if (orderSearch) {
+            orderSearch.value = "";
+            orderSearch.focus();
+        }
+
         loadOrders();
-        orderSearch.focus();
     });
 }
-loadOrders();
-
-/* ===== ORDER FILTERS ===== */
-
-const statusFilter = document.getElementById("statusFilter");
-const paymentFilter = document.getElementById("paymentFilter");
-const dateFilter = document.getElementById("dateFilter");
-const clearFilters = document.getElementById("clearFilters");
 
 if (statusFilter) {
     statusFilter.addEventListener("change", loadOrders);
@@ -696,30 +829,35 @@ if (clearFilters) {
     });
 }
 
-
-/* ===== RECEIPT BUTTONS ===== */
+// =====================================
+// RECEIPT BUTTONS
+// =====================================
 
 const receiptModal = document.getElementById("receiptModal");
 const closeReceiptBtn = document.getElementById("closeReceipt");
 const printReceiptBtn = document.getElementById("printReceipt");
 
-// CLOSE RECEIPT
 if (closeReceiptBtn) {
-    closeReceiptBtn.addEventListener("click", function (event) {
+    closeReceiptBtn.addEventListener("click", event => {
         event.preventDefault();
-        receiptModal.style.display = "none";
+
+        if (receiptModal) {
+            receiptModal.style.display = "none";
+        }
     });
 }
 
-// PRINT RECEIPT
 if (printReceiptBtn) {
-    printReceiptBtn.addEventListener("click", function (event) {
+    printReceiptBtn.addEventListener("click", event => {
         event.preventDefault();
         window.print();
     });
 }
 
-// Toggle Customer Reviews section
+// =====================================
+// TOGGLE CUSTOMER REVIEWS
+// =====================================
+
 const toggleReviewsBtn = document.getElementById("toggleReviewsBtn");
 const adminReviewsContent = document.getElementById("adminReviewsContent");
 const reviewsToggleIcon = document.getElementById("reviewsToggleIcon");
@@ -739,21 +877,23 @@ if (toggleReviewsBtn && adminReviewsContent) {
             reviewsToggleIcon.textContent = isOpening ? "－" : "＋";
         }
 
-        if (isOpening && typeof loadAdminReviews === "function") {
+        if (isOpening) {
             loadAdminReviews();
         }
     });
 }
 
-
 // =====================================
-// LOAD AND DISPLAY CUSTOMER REVIEWS
+// LOAD CUSTOMER REVIEWS
 // =====================================
 
 const adminReviewsList = document.getElementById("adminReviewsList");
-const adminReviewsMessage = document.getElementById("adminReviewsMessage");
-const reviewStatusFilter = document.getElementById("reviewStatusFilter");
-const refreshReviewsBtn = document.getElementById("refreshReviewsBtn");
+const adminReviewsMessage =
+    document.getElementById("adminReviewsMessage");
+const reviewStatusFilter =
+    document.getElementById("reviewStatusFilter");
+const refreshReviewsBtn =
+    document.getElementById("refreshReviewsBtn");
 
 async function loadAdminReviews() {
     if (!adminReviewsList || !adminReviewsMessage) {
@@ -765,10 +905,7 @@ async function loadAdminReviews() {
     adminReviewsList.replaceChildren();
 
     try {
-        const response = await fetch("/api/admin/reviews", {
-            credentials: "same-origin"
-        });
-
+        const response = await apiFetch("/api/admin/reviews");
         const reviews = await response.json();
 
         if (!response.ok) {
@@ -777,7 +914,9 @@ async function loadAdminReviews() {
             );
         }
 
-        console.log("Reviews received by admin:", reviews);
+        if (!Array.isArray(reviews)) {
+            throw new Error("The backend returned an invalid reviews list.");
+        }
 
         const selectedStatus = reviewStatusFilter
             ? reviewStatusFilter.value
@@ -874,23 +1013,20 @@ async function loadAdminReviews() {
 
     } catch (error) {
         console.error("Error loading customer reviews:", error);
-
         adminReviewsMessage.textContent = error.message;
     }
 }
 
-
-// Approve or reject a review
+// Approve or reject a review.
 async function updateReviewStatus(reviewId, status) {
     try {
-        const response = await fetch(
+        const response = await apiFetch(
             `/api/admin/reviews/${encodeURIComponent(reviewId)}`,
             {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                credentials: "same-origin",
                 body: JSON.stringify({ status })
             }
         );
@@ -911,57 +1047,73 @@ async function updateReviewStatus(reviewId, status) {
     }
 }
 
-
-// Filter reviews by status
 if (reviewStatusFilter) {
     reviewStatusFilter.addEventListener("change", loadAdminReviews);
 }
 
-
-// Refresh reviews manually
 if (refreshReviewsBtn) {
     refreshReviewsBtn.addEventListener("click", loadAdminReviews);
 }
 
-
- // =====================================
+// =====================================
 // INVENTORY MANAGEMENT
 // =====================================
 
-// Load and display inventory
+// Load and display inventory.
 async function loadAdminInventory() {
     const inventoryTable = document.getElementById("inventoryTable");
-    const tableMessage = document.getElementById("inventoryTableMessage");
+    const tableMessage =
+        document.getElementById("inventoryTableMessage");
+
+    if (!inventoryTable || !tableMessage) {
+        console.error("Inventory table elements were not found in admin.html.");
+        return;
+    }
 
     try {
-        const response = await fetch("/api/admin/inventory", {
-            credentials: "same-origin"
-        });
-
-        if (!response.ok) {
-            throw new Error("Could not load inventory.");
-        }
-
+        const response = await apiFetch("/api/admin/inventory");
         const inventory = await response.json();
 
-        // Update inventory summary cards
-        document.getElementById("inventoryTotalProducts").textContent =
-            inventory.length;
+        if (!response.ok) {
+            throw new Error(
+                inventory.message || "Could not load inventory."
+            );
+        }
 
-        document.getElementById("inventoryLowStock").textContent =
-            inventory.filter(item =>
+        if (!Array.isArray(inventory)) {
+            throw new Error("The backend returned an invalid inventory list.");
+        }
+
+        const inventoryTotalProducts =
+            document.getElementById("inventoryTotalProducts");
+        const inventoryLowStock =
+            document.getElementById("inventoryLowStock");
+        const inventoryOutOfStock =
+            document.getElementById("inventoryOutOfStock");
+
+        if (inventoryTotalProducts) {
+            inventoryTotalProducts.textContent = inventory.length;
+        }
+
+        if (inventoryLowStock) {
+            inventoryLowStock.textContent = inventory.filter(item =>
                 item.quantity > 0 &&
                 item.quantity <= item.lowStockThreshold
             ).length;
+        }
 
-        document.getElementById("inventoryOutOfStock").textContent =
-            inventory.filter(item => item.quantity === 0).length;
+        if (inventoryOutOfStock) {
+            inventoryOutOfStock.textContent = inventory.filter(
+                item => Number(item.quantity) === 0
+            ).length;
+        }
 
-        // Show a message if there are no products
         if (inventory.length === 0) {
             inventoryTable.innerHTML = `
                 <tr>
-                    <td colspan="6">No inventory items yet. Add your first product above.</td>
+                    <td colspan="6">
+                        No inventory items yet. Add your first product above.
+                    </td>
                 </tr>
             `;
 
@@ -969,15 +1121,16 @@ async function loadAdminInventory() {
             return;
         }
 
-        // Display each inventory item
         inventoryTable.innerHTML = inventory.map(item => {
             let stockStatus = "In Stock";
             let statusClass = "in-stock";
 
-            if (item.quantity === 0) {
+            if (Number(item.quantity) === 0) {
                 stockStatus = "Out of Stock";
                 statusClass = "out-of-stock";
-            } else if (item.quantity <= item.lowStockThreshold) {
+            } else if (
+                Number(item.quantity) <= Number(item.lowStockThreshold)
+            ) {
                 stockStatus = "Low Stock";
                 statusClass = "low-stock";
             }
@@ -986,13 +1139,13 @@ async function loadAdminInventory() {
                 <tr>
                     <td>${escapeInventoryText(item.name)}</td>
                     <td>${escapeInventoryText(item.category || "Other")}</td>
-                    <td>${item.quantity}</td>
+                    <td>${Number(item.quantity) || 0}</td>
                     <td>
                         <span class="inventory-status ${statusClass}">
                             ${stockStatus}
                         </span>
                     </td>
-                    <td>${item.lowStockThreshold}</td>
+                    <td>${Number(item.lowStockThreshold) || 0}</td>
                     <td>
                         <button
                             type="button"
@@ -1012,11 +1165,11 @@ async function loadAdminInventory() {
         console.error("Inventory loading error:", error);
 
         tableMessage.textContent =
-            "Unable to load inventory. Please refresh and try again.";
+            error.message || "Unable to load inventory. Please refresh.";
     }
 }
 
-// Safely display text in the inventory table
+// Safely display inventory text.
 function escapeInventoryText(value) {
     return String(value ?? "").replace(/[&<>"']/g, character => ({
         "&": "&amp;",
@@ -1027,7 +1180,10 @@ function escapeInventoryText(value) {
     })[character]);
 }
 
-// Add a new inventory item
+// =====================================
+// ADD INVENTORY ITEM
+// =====================================
+
 const inventoryForm = document.getElementById("inventoryForm");
 
 if (inventoryForm) {
@@ -1039,22 +1195,31 @@ if (inventoryForm) {
             'button[type="submit"]'
         );
 
-        const name = document.getElementById("inventoryName").value.trim();
-        const category = document.getElementById("inventoryCategory").value;
+        const name =
+            document.getElementById("inventoryName").value.trim();
+
+        const category =
+            document.getElementById("inventoryCategory").value;
+
         const quantity = Number(
             document.getElementById("inventoryQuantity").value
         );
+
         const lowStockThreshold = Number(
             document.getElementById("inventoryThreshold").value
         );
 
-        submitButton.disabled = true;
-        message.textContent = "Adding inventory item...";
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        if (message) {
+            message.textContent = "Adding inventory item...";
+        }
 
         try {
-            const response = await fetch("/api/admin/inventory", {
+            const response = await apiFetch("/api/admin/inventory", {
                 method: "POST",
-                credentials: "same-origin",
                 headers: {
                     "Content-Type": "application/json"
                 },
@@ -1074,31 +1239,49 @@ if (inventoryForm) {
                 );
             }
 
-            message.textContent = result.message;
+            if (message) {
+                message.textContent =
+                    result.message || "Inventory item added successfully.";
+            }
+
             inventoryForm.reset();
 
-            document.getElementById("inventoryThreshold").value = 5;
+            const thresholdInput =
+                document.getElementById("inventoryThreshold");
+
+            if (thresholdInput) {
+                thresholdInput.value = 5;
+            }
 
             await loadAdminInventory();
 
         } catch (error) {
-            message.textContent = error.message;
+            if (message) {
+                message.textContent = error.message;
+            }
         } finally {
-            submitButton.disabled = false;
+            if (submitButton) {
+                submitButton.disabled = false;
+            }
         }
     });
 }
 
-// Restock an existing product
-const inventoryTable = document.getElementById("inventoryTable");
+// =====================================
+// RESTOCK INVENTORY
+// =====================================
 
-if (inventoryTable) {
-    inventoryTable.addEventListener("click", async function(event) {
+const inventoryTableElement =
+    document.getElementById("inventoryTable");
+
+if (inventoryTableElement) {
+    inventoryTableElement.addEventListener("click", async function(event) {
         const button = event.target.closest(".restock-inventory-btn");
 
         if (!button) return;
 
         const itemId = button.dataset.inventoryId;
+
         const amountText = prompt(
             "How many units are you adding to the existing stock?"
         );
@@ -1119,11 +1302,10 @@ if (inventoryTable) {
         button.disabled = true;
 
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `/api/admin/inventory/${encodeURIComponent(itemId)}/restock`,
                 {
                     method: "PATCH",
-                    credentials: "same-origin",
                     headers: {
                         "Content-Type": "application/json"
                     },
@@ -1139,7 +1321,7 @@ if (inventoryTable) {
                 );
             }
 
-            alert(result.message);
+            alert(result.message || "Inventory restocked successfully.");
             await loadAdminInventory();
 
         } catch (error) {
@@ -1150,14 +1332,20 @@ if (inventoryTable) {
     });
 }
 
-// Refresh inventory manually
-const refreshInventoryBtn = document.getElementById(
-    "refreshInventoryBtn"
-);
+// Refresh inventory manually.
+const refreshInventoryBtn =
+    document.getElementById("refreshInventoryBtn");
 
 if (refreshInventoryBtn) {
-    refreshInventoryBtn.addEventListener("click", loadAdminInventory);
+    refreshInventoryBtn.addEventListener(
+        "click",
+        loadAdminInventory
+    );
 }
 
-// Load inventory when the admin dashboard opens
+// =====================================
+// INITIAL LOAD
+// =====================================
+
+loadOrders();
 loadAdminInventory();
