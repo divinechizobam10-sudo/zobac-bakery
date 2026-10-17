@@ -1,42 +1,51 @@
 
 
- // CHECK LOGIN STATUS
+
 document.addEventListener("DOMContentLoaded", async function () {
     const loginBtn = document.getElementById("loginBtn");
-    const accountMenu = document.querySelector(".account-menu");
+    const accountMenuBtn = document.getElementById("accountMenuBtn");
 
     if (loginBtn) loginBtn.style.display = "none";
-    if (accountMenu) accountMenu.style.display = "none";
+    if (accountMenuBtn) accountMenuBtn.style.display = "none";
 
     try {
         const response = await fetch(
             "https://zobac-bakery-8kqp.onrender.com/api/customer/session",
-            { credentials: "include" }
+            { method: "GET", credentials: "include" }
         );
 
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.message || "Could not check login status.");
+            throw new Error("Could not check login status.");
         }
 
         const isLoggedIn = result.authenticated === true;
-        console.log("Login status:", isLoggedIn);
 
         if (loginBtn) {
             loginBtn.style.display = isLoggedIn ? "none" : "inline-block";
         }
 
-        if (accountMenu) {
-            accountMenu.style.display = isLoggedIn ? "inline-block" : "none";
+        if (accountMenuBtn) {
+            accountMenuBtn.style.display = isLoggedIn ? "inline-block" : "none";
         }
+
     } catch (error) {
         console.error("Could not check login status:", error);
 
-        if (loginBtn) loginBtn.style.display = "inline-block";
-        if (accountMenu) accountMenu.style.display = "none";
+        const isLoggedIn =
+            localStorage.getItem("zobacLoggedIn") === "true";
+
+        if (loginBtn) {
+            loginBtn.style.display = isLoggedIn ? "none" : "inline-block";
+        }
+
+        if (accountMenuBtn) {
+            accountMenuBtn.style.display = isLoggedIn ? "inline-block" : "none";
+        }
     }
 });
+
 
 // ===============================
 // CUSTOMER-SPECIFIC CART SYSTEM
