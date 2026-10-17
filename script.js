@@ -628,26 +628,32 @@ async function placeOrder() {
     placeOrderBtn.textContent = "Submitting Order...";
 
     try {
-        const response = aconst response = await fetch(
+     
+const response = await fetch(
     "https://zobac-bakery-8kqp.onrender.com/api/orders",
-    {wait fetch("/api/orders", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                orderNumber: orderNumber,
-                email: getCurrentEmail(),
-                name: name,
-                phone: phone,
-                address: address,
-                deliveryDate: date,
-                items: orderItems,
-                total: total,
-                paymentMethod: paymentMethod,
-                paymentStatus: "Payment Pending"
-            })
-        });
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({
+            orderNumber: orderNumber,
+            email: getCurrentEmail(),
+            name: name,
+            phone: phone,
+            address: address,
+            deliveryDate: date,
+            items: orderItems,
+            total: total,
+            paymentMethod: paymentMethod,
+            paymentStatus: "Payment Pending"
+        })
+    }
+);
+
+const result = await response.json();
+
 
         const result = await response.json();
 
