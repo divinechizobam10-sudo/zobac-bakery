@@ -1,0 +1,10 @@
+[
+  {
+    "id": "mv88xgdkx9qcvf",
+    "name": "Butter bread",
+    "category": "Bread",
+    "quantity": 10,
+    "lowStockThreshold": 5,
+    "updatedAt": "2026-10-14T15:28:19.233Z"
+  }
+]
