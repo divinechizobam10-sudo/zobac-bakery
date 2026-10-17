@@ -692,12 +692,15 @@ async function placeOrder() {
         orderMessage.style.color = "#b45309";
         orderMessage.style.fontWeight = "bold";
 
-} finally {
-    registerBtn.disabled = false;
-}
-    });
-});
+    } finally {
+        const placeOrderBtn = document.getElementById("placeOrderBtn");
 
+        if (placeOrderBtn) {
+            placeOrderBtn.disabled = false;
+            placeOrderBtn.textContent = "Place Order";
+        }
+    }
+}
 
 const bankArrow = document.getElementById("bankDropdownBtn");
 
@@ -1972,9 +1975,11 @@ try {
 
     message.style.color = "red";
 
-} finally {
-    registerBtn.disabled = false;
-}
+        } finally {
+            registerBtn.disabled = false;
+        }
+    });
+});
 
 
 
