@@ -9,6 +9,14 @@
     "updatedAt": "2026-10-14T15:28:19.233Z"
   },
   {
+  "id": "stock_cookies",
+  "name": "Cookies",
+  "category": "Snacks",
+  "quantity": 10,
+  "lowStockThreshold": 3,
+  "updatedAt": "2026-10-17T00:00:00.000Z"
+},
+  {
     "id": "stock_cake",
     "name": "Cake",
     "category": "Cakes",
