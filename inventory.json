@@ -1,3 +1,4 @@
+
 [
   {
     "id": "mv88xgdkx9qcvf",
@@ -6,5 +7,117 @@
     "quantity": 10,
     "lowStockThreshold": 5,
     "updatedAt": "2026-10-14T15:28:19.233Z"
+  },
+  {
+    "id": "stock_cake",
+    "name": "Cake",
+    "category": "Cakes",
+    "quantity": 0,
+    "lowStockThreshold": 2,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_doughnuts",
+    "name": "Doughnuts",
+    "category": "Pastries",
+    "quantity": 0,
+    "lowStockThreshold": 5,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_wheat_bread",
+    "name": "Wheat Bread",
+    "category": "Bread",
+    "quantity": 0,
+    "lowStockThreshold": 5,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_meat_pie",
+    "name": "Meat Pie",
+    "category": "Pastries",
+    "quantity": 0,
+    "lowStockThreshold": 5,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_meat_pie_no_sugar",
+    "name": "Meat Pie-No Sugar",
+    "category": "Pastries",
+    "quantity": 0,
+    "lowStockThreshold": 5,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_zobac_deluxe",
+    "name": "Zobac Deluxe",
+    "category": "Pastries",
+    "quantity": 0,
+    "lowStockThreshold": 5,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_banana_bread",
+    "name": "Banana Bread",
+    "category": "Bread",
+    "quantity": 0,
+    "lowStockThreshold": 3,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_chin_chin",
+    "name": "Chin Chin",
+    "category": "Snacks",
+    "quantity": 0,
+    "lowStockThreshold": 5,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_cookies",
+    "name": "Cookies",
+    "category": "Snacks",
+    "quantity": 0,
+    "lowStockThreshold": 5,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_pizza",
+    "name": "Pizza",
+    "category": "Pizza",
+    "quantity": 0,
+    "lowStockThreshold": 2,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_shawarma",
+    "name": "Sharwama",
+    "category": "Shawarma",
+    "quantity": 0,
+    "lowStockThreshold": 2,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_plantain_chips",
+    "name": "Plantain Chips",
+    "category": "Snacks",
+    "quantity": 0,
+    "lowStockThreshold": 5,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_peanut_burger",
+    "name": "Peanut Burger",
+    "category": "Snacks",
+    "quantity": 0,
+    "lowStockThreshold": 5,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
+  },
+  {
+    "id": "stock_zobo",
+    "name": "Zobo",
+    "category": "Drinks",
+    "quantity": 0,
+    "lowStockThreshold": 5,
+    "updatedAt": "2026-10-17T00:00:00.000Z"
   }
 ]
