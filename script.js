@@ -2008,7 +2008,7 @@ try {
 
 
 
- // ===============================
+// ===============================
 // LOGIN - BACKEND
 // ===============================
 
@@ -2019,17 +2019,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const passwordInput = document.getElementById("loginPassword");
     const message = document.getElementById("loginMessage");
 
-   if (!loginForm || !loginBtn || !emailInput || !passwordInput || !message) {
-    console.log("Missing login element:", {
-        loginForm,
-        loginBtn,
-        emailInput,
-        passwordInput,
-        message
-    });
-    return;
-}
+    if (!loginForm || !loginBtn || !emailInput || !passwordInput || !message) {
+        return;
+    }
 
+    // Keep the rest of your existing login code below this line.
+});
 console.log("LOGIN FORM CONNECTED");
     const rememberedEmail = localStorage.getItem("zobacLoginEmail");
 
