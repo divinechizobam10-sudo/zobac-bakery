@@ -14,7 +14,8 @@ function apiFetch(path, options = {}) {
 document.addEventListener("DOMContentLoaded", async function () {
     const loginBtn = document.getElementById("loginBtn");
     const accountMenuBtn = document.getElementById("accountMenuBtn");
-
+if (loginBtn) loginBtn.style.display = "none";
+if (accountMenuBtn) accountMenuBtn.style.display = "none";
     try {
         const response = await apiFetch("/api/customer/session");
         const result = await response.json();
@@ -2094,10 +2095,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-// ===============================
-// LOAD CURRENT ACCOUNT
-// ===============================
 
+/* ===============================
+   LOAD CURRENT ACCOUNT
+================================ */
 
 document.addEventListener("DOMContentLoaded", async function () {
     const accountName = document.getElementById("accountName");
@@ -2111,29 +2112,18 @@ document.addEventListener("DOMContentLoaded", async function () {
         return;
     }
 
+    try {
+        // Check the existing customer session.
+        const response = await apiFetch("/api/customer/session");
+        const result = await response.json();
 
-try {
-    // Load the logged-in customer's details from the backend
-   const response = await apiFetch("/api/login", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ email, password })
-});
-            credentials: "include"
+        if (!response.ok || result.authenticated !== true) {
+            savedName.textContent = "Please log in again";
+            savedPhone.textContent = "Please log in again";
+            return;
         }
-    );
 
-    const result = await response.json();
-
-    if (!response.ok || result.authenticated !== true) {
-        savedName.textContent = "Please log in again";
-        savedPhone.textContent = "Please log in again";
-        return;
-    }
-
-        const customer = result.customer;
+        const customer = result.customer || {};
 
         accountName.value = customer.name || "";
         accountPhone.value = customer.phone || "";
@@ -2148,7 +2138,7 @@ try {
         return;
     }
 
-    // Save account details to the backend
+    // Save account details to the backend.
     if (saveAccountBtn) {
         saveAccountBtn.addEventListener("click", async function (event) {
             event.preventDefault();
@@ -2170,7 +2160,6 @@ try {
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    credentials: "same-origin",
                     body: JSON.stringify({ name, phone })
                 });
 
@@ -2182,11 +2171,11 @@ try {
                     );
                 }
 
-                accountName.value = result.customer.name;
-                accountPhone.value = result.customer.phone;
+                accountName.value = result.customer.name || "";
+                accountPhone.value = result.customer.phone || "";
 
-                savedName.textContent = result.customer.name;
-                savedPhone.textContent = result.customer.phone;
+                savedName.textContent = result.customer.name || "";
+                savedPhone.textContent = result.customer.phone || "";
 
                 alert("Account details saved successfully!");
 
