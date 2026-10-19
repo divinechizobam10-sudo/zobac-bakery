@@ -2008,9 +2008,9 @@ try {
 
 
 
-// ===============================
-// LOGIN - BACKEND
-// ===============================
+ // ===============================
+ // LOGIN - BACKEND
+ // ===============================
 
 document.addEventListener("DOMContentLoaded", function () {
     const loginForm = document.getElementById("loginForm");
@@ -2019,27 +2019,26 @@ document.addEventListener("DOMContentLoaded", function () {
     const passwordInput = document.getElementById("loginPassword");
     const message = document.getElementById("loginMessage");
 
+    // This code runs only on the login page.
     if (!loginForm || !loginBtn || !emailInput || !passwordInput || !message) {
         return;
     }
 
-    // Keep the rest of your existing login code below this line.
-});
-console.log("LOGIN FORM CONNECTED");
+    console.log("LOGIN FORM CONNECTED");
+
     const rememberedEmail = localStorage.getItem("zobacLoginEmail");
 
     if (rememberedEmail) {
         emailInput.value = rememberedEmail;
     }
 
-   loginBtn.addEventListener("click", async function (event) {
-    console.log("LOGIN BUTTON CLICKED");
-    event.preventDefault();
+    // Handle login form submission.
+    loginForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
 
-    console.log("LOGIN BUTTON CLICKED");
+        const email = emailInput.value.trim().toLowerCase();
+        const password = passwordInput.value;
 
-    const email = emailInput.value.trim().toLowerCase();
-    const password = passwordInput.value;
         if (!email || !password) {
             message.style.color = "red";
             message.textContent = "Please enter your email and password.";
@@ -2049,42 +2048,43 @@ console.log("LOGIN FORM CONNECTED");
         loginBtn.disabled = true;
         message.style.color = "";
         message.textContent = "Logging in...";
-try {
-    const response = await fetch(
-        "https://zobac-bakery-8kqp.onrender.com/api/login",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: JSON.stringify({ email, password })
-        }
-    );
 
-    const result = await response.json();
+        try {
+            const response = await fetch(
+                "https://zobac-bakery-8kqp.onrender.com/api/login",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({ email, password })
+                }
+            );
 
-    if (!response.ok) {
-        throw new Error(result.message || "Login failed.");
-    }
+            const result = await response.json();
 
-    localStorage.setItem("zobacLoginEmail", email);
-    localStorage.setItem("zobacCurrentEmail", email);
-    localStorage.setItem("zobacLoggedIn", "true");
+            if (!response.ok) {
+                throw new Error(result.message || "Login failed.");
+            }
 
-    message.style.color = "green";
-    message.textContent = "Login successful!";
+            localStorage.setItem("zobacLoginEmail", email);
+            localStorage.setItem("zobacCurrentEmail", email);
+            localStorage.setItem("zobacLoggedIn", "true");
 
-    window.location.href = "index.html";
+            message.style.color = "green";
+            message.textContent = "Login successful!";
 
-} catch (error) {
-    console.error("Login failed:", error);
+            window.location.href = "index.html";
 
-    message.style.color = "red";
-    message.textContent =
-        error.message === "Failed to fetch"
-            ? "Cannot connect to the server. Please try again."
-            : error.message;
+        } catch (error) {
+            console.error("Login failed:", error);
+
+            message.style.color = "red";
+            message.textContent =
+                error.message === "Failed to fetch"
+                    ? "Cannot connect to the server. Please try again."
+                    : error.message;
 
         } finally {
             loginBtn.disabled = false;
