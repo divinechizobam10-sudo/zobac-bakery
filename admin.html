@@ -315,5 +315,35 @@
 </div>
 
     <script src="admin.js"></script>
+    
+    
+    <CodeBlock language="html" editable>
+<section id="adminLoginPanel" hidden style="max-width:420px; margin:30px auto; padding:20px;">
+    <h2>Admin Login</h2>
+    <p>Log in to manage Zobac Bakery.</p>
+<form id="adminLoginForm">
+        <label for="adminUsername">Username</label>
+        <input
+            type="text"
+            id="adminUsername"
+            autocomplete="username"
+            required
+        >
+<label for="adminPassword">Password</label>
+        <input
+            type="password"
+            id="adminPassword"
+            autocomplete="current-password"
+            required
+        >
+<button type="submit" id="adminLoginSubmit">
+            Login
+        </button>
+    </form>
+<p id="adminLoginMessage" role="status"></p>
+</section>
+</CodeBlock>
+
+
 </body>
 </html>
