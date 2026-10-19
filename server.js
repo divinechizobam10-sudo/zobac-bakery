@@ -1165,19 +1165,14 @@ console.log("ORDER DATA:", JSON.stringify(order, null, 2));
             });
         }
 
-        // Check that Gmail settings are available.
-        if (
-            !process.env.EMAIL_USER ||
-            !process.env.EMAIL_PASS ||
-            !process.env.BAKERY_EMAIL
-        ) {
-            console.error("Bakery email settings are missing.");
-
-            return res.status(500).json({
-                message: "Bakery email settings are not configured yet."
-            });
-        }
-
+      // Check Resend settings without blocking order checkout.
+if (
+    !process.env.RESEND_API_KEY ||
+    !process.env.RESEND_FROM_EMAIL ||
+    !process.env.BAKERY_EMAIL
+) {
+    console.error("Resend email settings are incomplete.");
+}
         // Load saved orders and prevent duplicate order numbers.
         const savedOrders = loadOrders();
 
@@ -1326,52 +1321,63 @@ const savedOrder = {
         savedOrders.push(savedOrder);
         saveOrders(savedOrders);
 
-        console.log("ORDER VALIDATED AND SAVED");
-        console.log("ATTEMPTING TO SEND BAKERY EMAIL");
+        
+console.log("ORDER VALIDATED AND SAVED");
 
-      
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    connectionTimeout: 20000,
-    greetingTimeout: 20000,
-    socketTimeout: 30000,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+// Email notification is separate from order saving.
+// An email failure must not make checkout appear to fail.
+let emailSent = false;
+
+try {
+    if (
+        !process.env.RESEND_API_KEY ||
+        !process.env.RESEND_FROM_EMAIL ||
+        !process.env.BAKERY_EMAIL
+    ) {
+        throw new Error("Resend email settings are incomplete.");
     }
-});
 
-        // Prepare order items for the email.
-        const itemDetails = order.items.map(item => {
-            const quantity = Number(item.quantity);
-            const price = getTrustedPrice(item);
-            const customization = item.customization || {};
+    // Prepare order items for the email.
+    const itemDetails = order.items.map(item => {
+        const quantity = Number(item.quantity);
+        const price = getTrustedPrice(item);
+        const customization = item.customization || {};
 
-            const details = Object.entries(customization)
-                .filter(([key, value]) =>
-                    value !== "" &&
-                    value !== null &&
-                    value !== undefined
-                )
-                .map(([key, value]) => `${key}: ${value}`)
-                .join(", ");
+        const details = Object.entries(customization)
+            .filter(([key, value]) =>
+                value !== "" &&
+                value !== null &&
+                value !== undefined
+            )
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(", ");
 
-            return [
-                `${item.name || item.productName}`,
-                `Qty: ${quantity}`,
-                `Price: ₦${(price * quantity).toLocaleString("en-NG")}`,
-                details ? `Customization: ${details}` : ""
-            ].filter(Boolean).join(" | ");
-        }).join("\n");
+        return [
+            `${item.name || item.productName}`,
+            `Qty: ${quantity}`,
+            `Price: ₦${(
+                price * quantity
+            ).toLocaleString("en-NG")}`,
+            details ? `Customization: ${details}` : ""
+        ].filter(Boolean).join(" | ");
+    }).join("\n");
 
-        // Send the order email.
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: process.env.BAKERY_EMAIL,
-            subject: `New Zobac Bakery Order - ${order.orderNumber}`,
-            text: `
+    // Send the notification through Resend's email API.
+    const emailResponse = await fetch(
+        "https://api.resend.com/emails",
+        {
+            method: "POST",
+            headers: {
+                "Authorization":
+                    `Bearer ${process.env.RESEND_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                from: process.env.RESEND_FROM_EMAIL,
+                to: [process.env.BAKERY_EMAIL],
+                subject:
+                    `New Zobac Bakery Order - ${order.orderNumber}`,
+                text: `
 NEW ZOBAC BAKERY ORDER
 
 Order number: ${order.orderNumber}
@@ -1393,21 +1399,44 @@ ${itemDetails}
 Verified order total: ₦${calculatedTotal.toLocaleString("en-NG")}
 
 Please verify payment before dispatch.
-            `
-        });
+                `
+            })
+        }
+    );
 
-        console.log("BAKERY EMAIL SENT SUCCESSFULLY");
+    const emailResult = await emailResponse.json();
 
-            return res.status(201).json({
-            message: "Order details sent to the bakery email.",
-            orderNumber: savedOrder.orderNumber,
-            status: savedOrder.status,
-            paymentMethod: savedOrder.paymentMethod,
-            paymentStatus: savedOrder.paymentStatus,
-            emailSent: true
-        });
+    if (!emailResponse.ok) {
+        throw new Error(
+            emailResult.message ||
+            `Resend returned HTTP ${emailResponse.status}`
+        );
+    }
 
-    } 
+    emailSent = true;
+    console.log("BAKERY EMAIL SENT SUCCESSFULLY");
+
+} catch (emailError) {
+    console.error(
+        "BAKERY EMAIL FAILED:",
+        emailError.message
+    );
+}
+
+// The order was already saved, so return success even if
+// the email notification could not be delivered.
+return res.status(201).json({
+    success: true,
+    message: emailSent
+        ? "Order placed successfully. Bakery notification sent."
+        : "Order placed successfully. Email notification could not be sent.",
+    orderNumber: savedOrder.orderNumber,
+    status: savedOrder.status,
+    paymentMethod: savedOrder.paymentMethod,
+    paymentStatus: savedOrder.paymentStatus,
+    emailSent: emailSent
+});
+
     catch (error) {
         console.error("ORDER OR EMAIL ERROR:", error);
 
