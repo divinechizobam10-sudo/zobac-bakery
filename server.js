@@ -1437,7 +1437,7 @@ return res.status(201).json({
     emailSent: emailSent
 });
 
-    catch (error) {
+    }catch (error) {
         console.error("ORDER OR EMAIL ERROR:", error);
 
         // The order may already be saved if Gmail failed.
