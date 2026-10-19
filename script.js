@@ -2859,7 +2859,7 @@ async function checkForDeliveredOrderReview() {
     if (reviewModal.style.display === "flex") return;
 
     try {
-        const response = await fetch(
+        const response = await apiFetch(
             "/api/customer/reviewable-orders",
             { credentials: "same-origin" }
         );
