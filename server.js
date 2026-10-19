@@ -1327,14 +1327,21 @@ const savedOrder = {
         console.log("ORDER VALIDATED AND SAVED");
         console.log("ATTEMPTING TO SEND BAKERY EMAIL");
 
-        // Create Gmail transporter.
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
+      
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 30000,
+
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
         // Prepare order items for the email.
         const itemDetails = order.items.map(item => {
