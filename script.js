@@ -2766,10 +2766,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (!ordersList) return;
 
     try {
-        const response = await fetch("/api/customer/session", {
-            credentials: "same-origin"
-        });
-
+       const response = await apiFetch("/api/customer/session");
         const result = await response.json();
 
         if (!response.ok || result.authenticated !== true) {
