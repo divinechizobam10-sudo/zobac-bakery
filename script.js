@@ -2114,9 +2114,13 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 try {
     // Load the logged-in customer's details from the backend
-    const response = await fetch(
-        "https://zobac-bakery-8kqp.onrender.com/api/customer/session",
-        {
+   const response = await apiFetch("/api/login", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ email, password })
+});
             credentials: "include"
         }
     );
@@ -2514,15 +2518,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
-document.addEventListener("DOMContentLoaded", function () {
-    const loginBtn = document.getElementById("loginBtn");
 
-    if (loginBtn) {
-        loginBtn.addEventListener("click", function (event) {
-            event.preventDefault();
-        });
-    }
-});
 document.addEventListener("DOMContentLoaded", function () {
     const savePasswordBtn = document.getElementById("savePasswordBtn");
 
