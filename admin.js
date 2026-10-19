@@ -679,7 +679,7 @@ if (clearOrderSearch) {
         orderSearch.focus();
     });
 }
-loadOrders();
+
 
 /* ===== ORDER FILTERS ===== */
 
@@ -1175,4 +1175,86 @@ if (refreshInventoryBtn) {
 }
 
 // Load inventory when the admin dashboard opens
-loadAdminInventory();
+
+
+/* ===== ADMIN LOGIN AND SESSION CHECK ===== */
+
+const adminLoginPanel = document.getElementById("adminLoginPanel");
+const adminDashboard = document.getElementById("adminDashboard");
+const adminLoginForm = document.getElementById("adminLoginForm");
+const adminLoginMessage = document.getElementById("adminLoginMessage");
+const adminLoginSubmit = document.getElementById("adminLoginSubmit");
+
+function showAdminDashboard(isLoggedIn) {
+    adminLoginPanel.hidden = isLoggedIn;
+    adminDashboard.hidden = !isLoggedIn;
+}
+
+async function checkAdminSession() {
+    showAdminDashboard(false);
+    adminLoginMessage.textContent = "Checking admin login...";
+
+    try {
+        const response = await apiFetch("/api/admin/session");
+        const result = await response.json();
+
+        if (response.ok && result.authenticated === true) {
+            showAdminDashboard(true);
+            adminLoginMessage.textContent = "";
+
+            await loadOrders();
+            await loadAdminInventory();
+        } else {
+            adminLoginMessage.textContent =
+                "Please log in to access the dashboard.";
+        }
+    } catch (error) {
+        adminLoginMessage.textContent =
+            "Could not connect to the server. Please try again.";
+        console.error("Admin session check failed:", error);
+    }
+}
+
+
+if (adminLoginForm) {
+    adminLoginForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        adminLoginSubmit.disabled = true;
+        adminLoginMessage.textContent = "Logging in...";
+
+        try {
+            const response = await apiFetch("/api/admin/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    username: document.getElementById("adminUsername").value.trim(),
+                    password: document.getElementById("adminPassword").value
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || "Admin login failed.");
+            }
+
+            showAdminDashboard(true);
+            adminLoginMessage.textContent = "Login successful!";
+
+            await loadOrders();
+            await loadAdminInventory();
+
+        } catch (error) {
+            adminLoginMessage.textContent = error.message;
+            showAdminDashboard(false);
+        } finally {
+            adminLoginSubmit.disabled = false;
+        }
+    });
+}
+
+
+checkAdminSession();
