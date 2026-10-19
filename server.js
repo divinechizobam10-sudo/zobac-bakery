@@ -1,5 +1,7 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
+const dns = require("node:dns");
+dns.setDefaultResultOrder("ipv4first");
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const fs = require("fs");
@@ -1332,11 +1334,9 @@ const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
-
     connectionTimeout: 20000,
     greetingTimeout: 20000,
     socketTimeout: 30000,
-
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
