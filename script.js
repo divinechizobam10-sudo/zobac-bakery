@@ -11,11 +11,13 @@ function apiFetch(path, options = {}) {
 
 
 
+
 document.addEventListener("DOMContentLoaded", async function () {
-    const loginBtn = document.getElementById("loginBtn");
+    // Use a separate ID for the navbar link.
+    const navbarLoginBtn = document.getElementById("navbarLoginBtn");
     const accountMenuBtn = document.getElementById("accountMenuBtn");
-if (loginBtn) loginBtn.style.display = "none";
-if (accountMenuBtn) accountMenuBtn.style.display = "none";
+
+    // Do not hide the login form's submit button.
     try {
         const response = await apiFetch("/api/customer/session");
         const result = await response.json();
@@ -31,28 +33,28 @@ if (accountMenuBtn) accountMenuBtn.style.display = "none";
                 "zobacCurrentEmail",
                 result.customer.email.trim().toLowerCase()
             );
-
             localStorage.setItem("zobacLoggedIn", "true");
         }
 
-        if (loginBtn) {
-            loginBtn.style.display = isLoggedIn
-                ? "none"
-                : "inline-block";
+        if (navbarLoginBtn) {
+            navbarLoginBtn.style.display =
+                isLoggedIn ? "none" : "inline-block";
         }
 
         if (accountMenuBtn) {
-            accountMenuBtn.style.display = isLoggedIn
-                ? "inline-block"
-                : "none";
+            accountMenuBtn.style.display =
+                isLoggedIn ? "inline-block" : "none";
         }
-
     } catch (error) {
         console.error("Could not check login status:", error);
 
-        // Do not treat a saved email as proof of authentication.
-        if (loginBtn) loginBtn.style.display = "inline-block";
-        if (accountMenuBtn) accountMenuBtn.style.display = "none";
+        if (navbarLoginBtn) {
+            navbarLoginBtn.style.display = "inline-block";
+        }
+
+        if (accountMenuBtn) {
+            accountMenuBtn.style.display = "none";
+        }
     }
 });
 
@@ -2774,16 +2776,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 
 
-
- // Navbar Login button
-const navbarLoginBtn = document.querySelector(".nav-links #loginBtn");
-
-if (navbarLoginBtn) {
-    navbarLoginBtn.addEventListener("click", function (event) {
-        event.preventDefault();
-        window.location.href = "login.html";
-    });
-}
 
 
 // Login popup button
