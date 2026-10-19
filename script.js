@@ -1,19 +1,22 @@
 
+const API_BASE_URL = "https://zobac-bakery-8kqp.onrender.com";
+
+function apiFetch(path, options = {}) {
+    return fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        credentials: "include"
+    });
+}
+
+
 
 
 document.addEventListener("DOMContentLoaded", async function () {
     const loginBtn = document.getElementById("loginBtn");
     const accountMenuBtn = document.getElementById("accountMenuBtn");
 
-    if (loginBtn) loginBtn.style.display = "none";
-    if (accountMenuBtn) accountMenuBtn.style.display = "none";
-
     try {
-        const response = await fetch(
-            "https://zobac-bakery-8kqp.onrender.com/api/customer/session",
-            { method: "GET", credentials: "include" }
-        );
-
+        const response = await apiFetch("/api/customer/session");
         const result = await response.json();
 
         if (!response.ok) {
@@ -22,29 +25,36 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         const isLoggedIn = result.authenticated === true;
 
+        if (isLoggedIn && result.customer?.email) {
+            localStorage.setItem(
+                "zobacCurrentEmail",
+                result.customer.email.trim().toLowerCase()
+            );
+
+            localStorage.setItem("zobacLoggedIn", "true");
+        }
+
         if (loginBtn) {
-            loginBtn.style.display = isLoggedIn ? "none" : "inline-block";
+            loginBtn.style.display = isLoggedIn
+                ? "none"
+                : "inline-block";
         }
 
         if (accountMenuBtn) {
-            accountMenuBtn.style.display = isLoggedIn ? "inline-block" : "none";
+            accountMenuBtn.style.display = isLoggedIn
+                ? "inline-block"
+                : "none";
         }
 
     } catch (error) {
         console.error("Could not check login status:", error);
 
-        const isLoggedIn =
-            localStorage.getItem("zobacLoggedIn") === "true";
-
-        if (loginBtn) {
-            loginBtn.style.display = isLoggedIn ? "none" : "inline-block";
-        }
-
-        if (accountMenuBtn) {
-            accountMenuBtn.style.display = isLoggedIn ? "inline-block" : "none";
-        }
+        // Do not treat a saved email as proof of authentication.
+        if (loginBtn) loginBtn.style.display = "inline-block";
+        if (accountMenuBtn) accountMenuBtn.style.display = "none";
     }
 });
+
 
 
 // ===============================
@@ -856,7 +866,7 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(
 async function syncCustomerOrderStatuses() {
     try {
         // Get only the orders belonging to the logged-in customer.
-        const response = await fetch("/api/customer/orders", {
+        const response = await apiFetch("/api/customer/orders", {
             credentials: "same-origin"
         });
 
@@ -2156,7 +2166,7 @@ try {
             saveAccountBtn.textContent = "Saving...";
 
             try {
-                const response = await fetch("/api/customer/profile", {
+                const response = await apiFetch("/api/customer/profile", {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json"
@@ -2927,7 +2937,7 @@ reviewForm.addEventListener("submit", async function (event) {
     submitButton.textContent = "Submitting...";
 
     try {
-        const response = await fetch("/api/reviews", {
+        const response = await apiFetch("/api/reviews", {
             method: "POST",
             credentials: "same-origin",
             headers: {
