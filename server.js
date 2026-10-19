@@ -16,13 +16,17 @@ const PORT = process.env.PORT || 3000;
 app.set("trust proxy", 1);
 
 // Allow the GitHub Pages website to communicate with Render.
-const FRONTEND_ORIGIN =
-    "https://divinechizobam10-sudo.github.io";
+
+const ALLOWED_ORIGINS = [
+    "https://divinechizobam10-sudo.github.io",
+    "http://127.0.0.1:5501",
+    "http://localhost:5501"
+];
 
 app.use((req, res, next) => {
     const origin = req.headers.origin;
 
-    if (origin === FRONTEND_ORIGIN) {
+    if (ALLOWED_ORIGINS.includes(origin)) {
         res.setHeader("Access-Control-Allow-Origin", origin);
         res.setHeader("Access-Control-Allow-Credentials", "true");
         res.setHeader("Vary", "Origin");
@@ -44,6 +48,7 @@ app.use((req, res, next) => {
 
     next();
 });
+
 
 app.use(helmet());
 
