@@ -1294,7 +1294,13 @@ if (
             const stock = request.item;
             const reserved = reservedStock.get(stock.id) || 0;
             const available = Number(stock.quantity) - reserved;
-
+                console.log("INVENTORY CHECK:", {
+    product: stock.name,
+    actualStock: stock.quantity,
+    reservedStock: reserved,
+    requested: request.quantity,
+    availableStock: available
+});
             if (request.quantity > available) {
                 return res.status(409).json({
                     success: false,
