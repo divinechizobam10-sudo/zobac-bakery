@@ -23,27 +23,38 @@ const ALLOWED_ORIGINS = [
     "http://localhost:5501"
 ];
 
+
+const ALLOWED_ORIGINS = [
+    "https://divinechizobam10-sudo.github.io",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+    "http://127.0.0.1:5501",
+    "http://localhost:5501"
+];
+
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-console.log("CORS check:", req.method, origin);
-    if (ALLOWED_ORIGINS.includes(origin)) {
-        res.setHeader("Access-Control-Allow-Origin", origin);
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-        res.setHeader("Vary", "Origin");
+
+    console.log("CORS check:", req.method, origin);
+
+    if (origin && ALLOWED_ORIGINS.includes(origin)) {
+        res.header("Access-Control-Allow-Origin", origin);
+        res.header("Access-Control-Allow-Credentials", "true");
+        res.header("Vary", "Origin");
     }
 
-    res.setHeader(
+    res.header(
         "Access-Control-Allow-Methods",
         "GET, POST, PATCH, PUT, DELETE, OPTIONS"
     );
 
-    res.setHeader(
+    res.header(
         "Access-Control-Allow-Headers",
         "Content-Type, Authorization"
     );
 
     if (req.method === "OPTIONS") {
-        return res.sendStatus(204);
+        return res.status(204).end();
     }
 
     next();
