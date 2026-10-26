@@ -15,13 +15,7 @@ const PORT = process.env.PORT || 3000;
 // Trust Render's HTTPS proxy.
 app.set("trust proxy", 1);
 
-// Allow the GitHub Pages website to communicate with Render.
 
-const ALLOWED_ORIGINS = [
-    "https://divinechizobam10-sudo.github.io",
-    "http://127.0.0.1:5501",
-    "http://localhost:5501"
-];
 
 
 const ALLOWED_ORIGINS = [
