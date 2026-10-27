@@ -1340,60 +1340,62 @@ const savedOrder = {
         
 console.log("ORDER VALIDATED AND SAVED");
 
-// Email notification is separate from order saving.
-// An email failure must not make checkout appear to fail.
-let emailSent = false;
 
-try {
-    if (
-        !process.env.RESEND_API_KEY ||
-        !process.env.RESEND_FROM_EMAIL ||
-        !process.env.BAKERY_EMAIL
-    ) {
-        throw new Error("Resend email settings are incomplete.");
-    }
+    // Email notification is separate from order saving.
+    // An email failure must not undo a saved order.
+    let emailSent = false;
 
-    // Prepare order items for the email.
-    const itemDetails = order.items.map(item => {
-        const quantity = Number(item.quantity);
-        const price = getTrustedPrice(item);
-        const customization = item.customization || {};
+    try {
+        if (
+            !process.env.EMAIL_USER ||
+            !process.env.EMAIL_PASS ||
+            !process.env.BAKERY_EMAIL
+        ) {
+            throw new Error("Gmail email settings are incomplete.");
+        }
 
-        const details = Object.entries(customization)
-            .filter(([key, value]) =>
-                value !== "" &&
-                value !== null &&
-                value !== undefined
-            )
-            .map(([key, value]) => `${key}: ${value}`)
-            .join(", ");
-
-        return [
-            `${item.name || item.productName}`,
-            `Qty: ${quantity}`,
-            `Price: ₦${(
-                price * quantity
-            ).toLocaleString("en-NG")}`,
-            details ? `Customization: ${details}` : ""
-        ].filter(Boolean).join(" | ");
-    }).join("\n");
-
-    // Send the notification through Resend's email API.
-    const emailResponse = await fetch(
-        "https://api.resend.com/emails",
-        {
-            method: "POST",
-            headers: {
-                "Authorization":
-                    `Bearer ${process.env.RESEND_API_KEY}`,
-                "Content-Type": "application/json"
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
             },
-            body: JSON.stringify({
-                from: process.env.RESEND_FROM_EMAIL,
-                to: [process.env.BAKERY_EMAIL],
-                subject:
-                    `New Zobac Bakery Order - ${order.orderNumber}`,
-                text: `
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            socketTimeout: 20000
+        });
+
+        const itemDetails = order.items.map(item => {
+            const quantity = Number(item.quantity);
+            const price = getTrustedPrice(item);
+            const customization = item.customization || {};
+
+            const details = Object.entries(customization)
+                .filter(([key, value]) =>
+                    value !== "" &&
+                    value !== null &&
+                    value !== undefined
+                )
+                .map(([key, value]) => `${key}: ${value}`)
+                .join(", ");
+
+            return [
+                `${item.name || item.productName}`,
+                `Qty: ${quantity}`,
+                `Price: ₦${(
+                    price * quantity
+                ).toLocaleString("en-NG")}`,
+                details ? `Customization: ${details}` : ""
+            ].filter(Boolean).join(" | ");
+        }).join("\n");
+
+        await transporter.sendMail({
+            from: `"Zobac Bakery" <${process.env.EMAIL_USER}>`,
+            to: process.env.BAKERY_EMAIL,
+            subject: `New Zobac Bakery Order - ${order.orderNumber}`,
+            text: `
 NEW ZOBAC BAKERY ORDER
 
 Order number: ${order.orderNumber}
@@ -1415,29 +1417,18 @@ ${itemDetails}
 Verified order total: ₦${calculatedTotal.toLocaleString("en-NG")}
 
 Please verify payment before dispatch.
-                `
-            })
-        }
-    );
+            `
+        });
 
-    const emailResult = await emailResponse.json();
+        emailSent = true;
+        console.log("BAKERY EMAIL SENT SUCCESSFULLY");
 
-    if (!emailResponse.ok) {
-        throw new Error(
-            emailResult.message ||
-            `Resend returned HTTP ${emailResponse.status}`
+    } catch (emailError) {
+        console.error(
+            "BAKERY EMAIL FAILED:",
+            emailError.message
         );
     }
-
-    emailSent = true;
-    console.log("BAKERY EMAIL SENT SUCCESSFULLY");
-
-} catch (emailError) {
-    console.error(
-        "BAKERY EMAIL FAILED:",
-        emailError.message
-    );
-}
 
 // The order was already saved, so return success even if
 // the email notification could not be delivered.
