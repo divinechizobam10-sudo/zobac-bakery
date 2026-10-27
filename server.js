@@ -1351,10 +1351,10 @@ console.log("ORDER VALIDATED AND SAVED");
             throw new Error("Gmail email settings are incomplete.");
         }
 
-        const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,
-            secure: true,
+       const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
@@ -1427,16 +1427,7 @@ Please verify payment before dispatch.
         );
     }
 
-    if (origin && ALLOWED_ORIGINS.includes(origin)) {
-        res.setHeader("Access-Control-Allow-Origin", origin);
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-        res.setHeader("Vary", "Origin");
-    }
-
-    res.setHeader(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PATCH, PUT, DELETE, OPTIONS"
-    );
+   
 // The order was already saved, so return success even if
 // the email notification could not be delivered.
 return res.status(201).json({
