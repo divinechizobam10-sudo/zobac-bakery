@@ -28,7 +28,8 @@ pool.on("error", (error) => {
 // Trust Render's HTTPS proxy.
 app.set("trust proxy", 1);
 
-// Allow the GitHub Pages website to communicate with Render.
+
+
 
 
 const ALLOWED_ORIGINS = [
@@ -45,26 +46,24 @@ app.use((req, res, next) => {
 
     console.log("CORS check:", req.method, origin);
 
-    if (ALLOWED_ORIGINS.includes(origin)) {
+    if (origin && ALLOWED_ORIGINS.includes(origin)) {
         res.setHeader("Access-Control-Allow-Origin", origin);
         res.setHeader("Access-Control-Allow-Credentials", "true");
         res.setHeader("Vary", "Origin");
     }
-
-    // Keep the rest of your existing middleware unchanged.
 
     res.setHeader(
         "Access-Control-Allow-Methods",
         "GET, POST, PATCH, PUT, DELETE, OPTIONS"
     );
 
-    res.setHeader(
+    res.header(
         "Access-Control-Allow-Headers",
         "Content-Type, Authorization"
     );
 
     if (req.method === "OPTIONS") {
-        return res.sendStatus(204);
+        return res.status(204).end();
     }
 
     next();
@@ -1428,7 +1427,16 @@ Please verify payment before dispatch.
         );
     }
 
+    if (origin && ALLOWED_ORIGINS.includes(origin)) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+        res.setHeader("Vary", "Origin");
+    }
 
+    res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PATCH, PUT, DELETE, OPTIONS"
+    );
 // The order was already saved, so return success even if
 // the email notification could not be delivered.
 return res.status(201).json({
@@ -1865,7 +1873,6 @@ app.patch(
         }
     }
 );
-
 
 /* ===== START SERVER AFTER DATABASE CHECK ===== */
 
