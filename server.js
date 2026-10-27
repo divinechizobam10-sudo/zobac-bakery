@@ -8,29 +8,50 @@ const fs = require("fs");
 const path = require("path");
 const session = require("express-session");
 const helmet = require("helmet");
+const { Pool } = require("pg");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+// ===== POSTGRESQL DATABASE CONNECTION =====
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL
+        ? { rejectUnauthorized: false }
+        : false
+});
+
+pool.on("error", (error) => {
+    console.error("Unexpected PostgreSQL error:", error.message);
+});
 
 // Trust Render's HTTPS proxy.
 app.set("trust proxy", 1);
 
 // Allow the GitHub Pages website to communicate with Render.
 
+
 const ALLOWED_ORIGINS = [
     "https://divinechizobam10-sudo.github.io",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
     "http://127.0.0.1:5501",
     "http://localhost:5501"
 ];
 
+
 app.use((req, res, next) => {
     const origin = req.headers.origin;
+
+    console.log("CORS check:", req.method, origin);
 
     if (ALLOWED_ORIGINS.includes(origin)) {
         res.setHeader("Access-Control-Allow-Origin", origin);
         res.setHeader("Access-Control-Allow-Credentials", "true");
         res.setHeader("Vary", "Origin");
     }
+
+    // Keep the rest of your existing middleware unchanged.
 
     res.setHeader(
         "Access-Control-Allow-Methods",
@@ -62,18 +83,23 @@ console.log(
     process.env.SESSION_SECRET?.length || 0
 );
 
+
+
 app.use(session({
-    name: "zobacAdminSession",
+    name: "zobacSession",
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production"
+            ? "none"
+            : "lax",
         maxAge: 30 * 60 * 1000
     }
 }));
+
 
 const ORDERS_FILE = path.join(__dirname, "orders.json");
 const CUSTOMERS_FILE = path.join(__dirname, "customers.json");
@@ -113,6 +139,52 @@ function saveOrders(orders) {
         JSON.stringify(orders, null, 2),
         "utf8"
     );
+}
+
+/* ===== POSTGRESQL ORDER FUNCTIONS ===== */
+
+// Get all orders from PostgreSQL.
+async function loadOrdersFromDatabase() {
+    const result = await pool.query(`
+        SELECT order_data
+        FROM zobac_orders
+        ORDER BY created_at DESC
+    `);
+
+    return result.rows.map(row => row.order_data);
+}
+
+// Save a new order to PostgreSQL.
+async function saveOrderToDatabase(order) {
+    await pool.query(
+        `INSERT INTO zobac_orders
+            (order_number, order_data, created_at)
+         VALUES ($1, $2::jsonb, COALESCE($3::timestamptz, NOW()))`,
+        [
+            order.orderNumber,
+            JSON.stringify(order),
+            order.createdAt || null
+        ]
+    );
+}
+
+// Update an existing order in PostgreSQL.
+async function updateOrderInDatabase(order) {
+    const result = await pool.query(
+        `UPDATE zobac_orders
+         SET order_data = $2::jsonb
+         WHERE order_number = $1`,
+        [
+            order.orderNumber,
+            JSON.stringify(order)
+        ]
+    );
+
+    if (result.rowCount === 0) {
+        throw new Error(
+            `Order ${order.orderNumber} was not found in PostgreSQL.`
+        );
+    }
 }
 
 // Load registered customers.
@@ -209,23 +281,10 @@ const PRODUCT_PRICES = {
     "Doughnuts": 500,
     "Wheat Bread": 2500,
     "Meat Pie": 1000,
-    "Meat Pie-No Sugar": 800,
     "Zobac Deluxe": 1500,
     "Banana Bread": 3000,
     "Chin Chin": 1000,
     "Cookies": 1000,
-
-    "Pizza": {
-        "Small": 18000,
-        "Medium": 25000,
-        "Large": 36000
-    },
-
-    "Sharwama": {
-        "Regular": 2500,
-        "Large": 4000
-    },
-
     "Plantain Chips": 2000,
     "Peanut Burger": 1000,
     "Zobo": 500
@@ -396,7 +455,13 @@ app.post("/api/customer/logout", (req, res, next) => {
             return next(error);
         }
 
-        res.clearCookie("zobacAdminSession");
+       res.clearCookie("zobacSession", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production"
+        ? "none"
+        : "lax"
+});
 
         return res.json({
             success: true,
@@ -405,67 +470,6 @@ app.post("/api/customer/logout", (req, res, next) => {
     });
 });
     
- // Check whether a customer is logged in
-app.get("/api/customer/session", (req, res) => {
-    if (
-        req.session?.customerAuthenticated !== true ||
-        !req.session.customerId
-    ) {
-        return res.json({
-            authenticated: false
-        });
-    }
-
-    try {
-        const customers = loadCustomers();
-
-        const customer = customers.find(
-            account => account.id === req.session.customerId
-        );
-
-        if (!customer) {
-            return res.json({
-                authenticated: false
-            });
-        }
-
-        return res.json({
-            authenticated: true,
-            customer: {
-                name: customer.name,
-                email: customer.email,
-                phone: customer.phone
-            }
-        });
-
-    } catch (error) {
-        console.error(
-            "Could not check customer session:",
-            error.message
-        );
-
-        return res.status(500).json({
-            authenticated: false,
-            message: "Could not check login status."
-        });
-    }
-});
-
-// Customer logout
-app.post("/api/customer/logout", (req, res, next) => {
-    req.session.destroy((error) => {
-        if (error) {
-            return next(error);
-        }
-
-        res.clearCookie("zobacAdminSession");
-
-        return res.json({
-            success: true,
-            message: "Logged out successfully."
-        });
-    });
-});
 
 
 // Customer registration
@@ -667,7 +671,7 @@ app.get("/api/reviews", (req, res) => {
 
 
 // Get the logged-in customer's delivered orders that can be reviewed
-app.get("/api/customer/reviewable-orders", (req, res) => {
+app.get("/api/customer/reviewable-orders", async (req, res) => {
     if (
         !req.session ||
         req.session.customerAuthenticated !== true
@@ -679,7 +683,7 @@ app.get("/api/customer/reviewable-orders", (req, res) => {
 
     try {
         const customers = loadCustomers();
-        const orders = loadOrders();
+       const orders = await loadOrdersFromDatabase();
         const reviews = loadReviews();
 
         const customer = customers.find(
@@ -728,7 +732,7 @@ app.get("/api/customer/reviewable-orders", (req, res) => {
 
 
 // Submit a review for a delivered order
-app.post("/api/reviews", (req, res) => {
+app.post("/api/reviews", async (req, res) => {
     if (
         !req.session ||
         req.session.customerAuthenticated !== true
@@ -772,7 +776,7 @@ app.post("/api/reviews", (req, res) => {
         }
 
         const customers = loadCustomers();
-        const orders = loadOrders();
+    const orders = await loadOrdersFromDatabase();
         const reviews = loadReviews();
 
         const customer = customers.find(
@@ -970,11 +974,13 @@ app.post("/api/admin/logout", (req, res, next) => {
     req.session.destroy((err) => {
         if (err) return next(err);
 
-        res.clearCookie("zobacAdminSession", {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax"
-        });
+      res.clearCookie("zobacSession", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production"
+        ? "none"
+        : "lax"
+});
 
         res.json({
             success: true,
@@ -1179,8 +1185,7 @@ if (
     console.error("Resend email settings are incomplete.");
 }
         // Load saved orders and prevent duplicate order numbers.
-        const savedOrders = loadOrders();
-
+const savedOrders = await loadOrdersFromDatabase();
         const existingOrder = savedOrders.find(
             saved => saved.orderNumber === order.orderNumber
         );
@@ -1294,7 +1299,7 @@ if (
             const stock = request.item;
             const reserved = reservedStock.get(stock.id) || 0;
             const available = Number(stock.quantity) - reserved;
-                console.log("INVENTORY CHECK:", {
+            console.log("INVENTORY CHECK:", {
     product: stock.name,
     actualStock: stock.quantity,
     reservedStock: reserved,
@@ -1329,66 +1334,66 @@ const savedOrder = {
 };
 
 
-        savedOrders.push(savedOrder);
-        saveOrders(savedOrders);
-
+       await saveOrderToDatabase(savedOrder);
         
 console.log("ORDER VALIDATED AND SAVED");
 
-// Email notification is separate from order saving.
-// An email failure must not make checkout appear to fail.
-let emailSent = false;
 
-try {
-    if (
-        !process.env.RESEND_API_KEY ||
-        !process.env.RESEND_FROM_EMAIL ||
-        !process.env.BAKERY_EMAIL
-    ) {
-        throw new Error("Resend email settings are incomplete.");
-    }
+    // Email notification is separate from order saving.
+    // An email failure must not undo a saved order.
+    let emailSent = false;
 
-    // Prepare order items for the email.
-    const itemDetails = order.items.map(item => {
-        const quantity = Number(item.quantity);
-        const price = getTrustedPrice(item);
-        const customization = item.customization || {};
+    try {
+        if (
+            !process.env.EMAIL_USER ||
+            !process.env.EMAIL_PASS ||
+            !process.env.BAKERY_EMAIL
+        ) {
+            throw new Error("Gmail email settings are incomplete.");
+        }
 
-        const details = Object.entries(customization)
-            .filter(([key, value]) =>
-                value !== "" &&
-                value !== null &&
-                value !== undefined
-            )
-            .map(([key, value]) => `${key}: ${value}`)
-            .join(", ");
-
-        return [
-            `${item.name || item.productName}`,
-            `Qty: ${quantity}`,
-            `Price: ₦${(
-                price * quantity
-            ).toLocaleString("en-NG")}`,
-            details ? `Customization: ${details}` : ""
-        ].filter(Boolean).join(" | ");
-    }).join("\n");
-
-    // Send the notification through Resend's email API.
-    const emailResponse = await fetch(
-        "https://api.resend.com/emails",
-        {
-            method: "POST",
-            headers: {
-                "Authorization":
-                    `Bearer ${process.env.RESEND_API_KEY}`,
-                "Content-Type": "application/json"
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
             },
-            body: JSON.stringify({
-                from: process.env.RESEND_FROM_EMAIL,
-                to: [process.env.BAKERY_EMAIL],
-                subject:
-                    `New Zobac Bakery Order - ${order.orderNumber}`,
-                text: `
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            socketTimeout: 20000
+        });
+
+        const itemDetails = order.items.map(item => {
+            const quantity = Number(item.quantity);
+            const price = getTrustedPrice(item);
+            const customization = item.customization || {};
+
+            const details = Object.entries(customization)
+                .filter(([key, value]) =>
+                    value !== "" &&
+                    value !== null &&
+                    value !== undefined
+                )
+                .map(([key, value]) => `${key}: ${value}`)
+                .join(", ");
+
+            return [
+                `${item.name || item.productName}`,
+                `Qty: ${quantity}`,
+                `Price: ₦${(
+                    price * quantity
+                ).toLocaleString("en-NG")}`,
+                details ? `Customization: ${details}` : ""
+            ].filter(Boolean).join(" | ");
+        }).join("\n");
+
+        await transporter.sendMail({
+            from: `"Zobac Bakery" <${process.env.EMAIL_USER}>`,
+            to: process.env.BAKERY_EMAIL,
+            subject: `New Zobac Bakery Order - ${order.orderNumber}`,
+            text: `
 NEW ZOBAC BAKERY ORDER
 
 Order number: ${order.orderNumber}
@@ -1410,29 +1415,19 @@ ${itemDetails}
 Verified order total: ₦${calculatedTotal.toLocaleString("en-NG")}
 
 Please verify payment before dispatch.
-                `
-            })
-        }
-    );
+            `
+        });
 
-    const emailResult = await emailResponse.json();
+        emailSent = true;
+        console.log("BAKERY EMAIL SENT SUCCESSFULLY");
 
-    if (!emailResponse.ok) {
-        throw new Error(
-            emailResult.message ||
-            `Resend returned HTTP ${emailResponse.status}`
+    } catch (emailError) {
+        console.error(
+            "BAKERY EMAIL FAILED:",
+            emailError.message
         );
     }
 
-    emailSent = true;
-    console.log("BAKERY EMAIL SENT SUCCESSFULLY");
-
-} catch (emailError) {
-    console.error(
-        "BAKERY EMAIL FAILED:",
-        emailError.message
-    );
-}
 
 // The order was already saved, so return success even if
 // the email notification could not be delivered.
@@ -1461,7 +1456,7 @@ return res.status(201).json({
 });
     
 // Return orders belonging only to the logged-in customer.
-app.get("/api/customer/orders", (req, res) => {
+app.get("/api/customer/orders", async (req, res) => {
     if (
         req.session?.customerAuthenticated !== true ||
         !req.session.customerId
@@ -1488,8 +1483,7 @@ app.get("/api/customer/orders", (req, res) => {
 
         const customerEmail = customer.email.toLowerCase();
 
-        const customerOrders = loadOrders().filter(
-            order =>
+const customerOrders = (await loadOrdersFromDatabase()).filter(            order =>
                 typeof order.email === "string" &&
                 order.email.trim().toLowerCase() === customerEmail
         );
@@ -1507,10 +1501,9 @@ app.get("/api/customer/orders", (req, res) => {
 });
 
 // Retrieve saved orders.
-app.get("/api/orders", requireAdmin, (req, res) => {
+app.get("/api/orders", requireAdmin, async (req, res) => {
          try {
-        const savedOrders = loadOrders();
-        res.json(savedOrders);
+const savedOrders = await loadOrdersFromDatabase();        res.json(savedOrders);
     } catch (error) {
         console.error("Could not retrieve orders:", error.message);
 
@@ -1523,7 +1516,7 @@ app.get("/api/orders", requireAdmin, (req, res) => {
 
 
  // Update an order's status and manage inventory.
-app.patch("/api/orders/:orderNumber", requireAdmin, (req, res) => {
+app.patch("/api/orders/:orderNumber", requireAdmin, async (req, res) => {
     try {
         const { status, paymentStatus } = req.body;
 
@@ -1568,8 +1561,7 @@ app.patch("/api/orders/:orderNumber", requireAdmin, (req, res) => {
             });
         }
 
-        const savedOrders = loadOrders();
-
+const savedOrders = await loadOrdersFromDatabase();
         const orderIndex = savedOrders.findIndex(
             order =>
                 order.orderNumber === req.params.orderNumber
@@ -1707,7 +1699,7 @@ app.patch("/api/orders/:orderNumber", requireAdmin, (req, res) => {
             order.paymentStatus = paymentStatus;
         }
 
-        saveOrders(savedOrders);
+await updateOrderInDatabase(order);
 
         return res.json({
             message: shouldDeductStock
@@ -1874,9 +1866,28 @@ app.patch(
     }
 );
 
-// Start the backend.
-app.listen(PORT, () => {
-    console.log(
-        `Zobac Bakery backend running at http://localhost:${PORT}`
-    );
-});
+
+/* ===== START SERVER AFTER DATABASE CHECK ===== */
+
+async function startServer() {
+    try {
+        if (!process.env.DATABASE_URL) {
+            throw new Error("DATABASE_URL is missing.");
+        }
+
+        await pool.query("SELECT 1");
+
+        console.log("PostgreSQL database connection successful.");
+
+        app.listen(PORT, () => {
+            console.log(
+                `Zobac Bakery backend running at http://localhost:${PORT}`
+            );
+        });
+    } catch (error) {
+        console.error("Could not start the backend:", error.message);
+        process.exit(1);
+    }
+}
+
+startServer();

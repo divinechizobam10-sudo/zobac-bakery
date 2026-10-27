@@ -1270,3 +1270,274 @@ tbody tr:hover {
         transform: none;
     }
 }
+
+/* ===== ADMIN LOGIN PAGE ===== */
+
+#adminLoginPanel {
+    width: calc(100% - 36px);
+    max-width: 420px;
+    margin: 65px auto !important;
+    padding: 35px 28px !important;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 22px;
+    box-shadow: 0 18px 45px rgba(45, 20, 70, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    animation: adminLoginAppear 0.6s ease;
+}
+
+#adminLoginPanel h2 {
+    margin: 0 0 10px;
+    color: #4B2E24;
+    text-align: center;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+#adminLoginPanel > p:first-of-type {
+    margin: 0 0 28px;
+    color: #777;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+#adminLoginForm {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#adminLoginForm label {
+    color: #4B2E24;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+#adminLoginForm input {
+    width: 100%;
+    padding: 14px 15px;
+    box-sizing: border-box;
+    border: 1.5px solid #e2d9e9;
+    border-radius: 11px;
+    background: #faf8fc;
+    color: #333;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+#adminLoginForm input:focus {
+    border-color: #8b3dba;
+    box-shadow: 0 0 0 4px rgba(139, 61, 186, 0.12);
+    background: #fff;
+}
+
+#adminLoginForm br {
+    display: none;
+}
+
+#adminLoginSubmit {
+    width: 100%;
+    margin-top: 12px;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(110deg, #7b2cbf, #f28c28);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 7px 18px rgba(123, 44, 191, 0.22);
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+
+#adminLoginSubmit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 23px rgba(123, 44, 191, 0.3);
+}
+
+#adminLoginSubmit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#adminLoginMessage {
+    min-height: 20px;
+    margin: 16px 0 0;
+    color: #7b2cbf;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+/* Purple and orange background */
+body:has(#adminLoginPanel:not([hidden])) {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #542080, #8b3dba 50%, #f28c28);
+}
+
+/* Login card entrance animation */
+@keyframes adminLoginAppear {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile styling */
+@media (max-width: 480px) {
+    #adminLoginPanel {
+        margin: 35px auto !important;
+        padding: 28px 21px !important;
+        border-radius: 18px;
+    }
+
+    #adminLoginPanel h2 {
+        font-size: 25px;
+    }
+}
+
+/* Correctly hide whichever section has the hidden attribute */
+#adminLoginPanel[hidden],
+#adminDashboard[hidden] {
+    display: none !important;
+}
+
+/* Admin login screen */
+#adminLoginPanel {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, #6a11cb, #ff8c42);
+}
+
+.admin-login-card {
+    width: 100%;
+    max-width: 380px;
+    padding: 30px 24px;
+    box-sizing: border-box;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+.admin-login-card h1 {
+    margin: 0 0 8px;
+    color: #4b2e24;
+    text-align: center;
+}
+
+.admin-login-card > p {
+    text-align: center;
+}
+
+#adminLoginForm {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#adminLoginForm input {
+    width: 100%;
+    padding: 12px;
+    box-sizing: border-box;
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+#adminLoginSubmit {
+    margin-top: 10px;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    background: #6a11cb;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#adminLoginSubmit:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+#adminLoginMessage {
+    overflow-wrap: anywhere;
+    color: #b42318;
+    text-align: center;
+}
+.admin-login-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #7b2cbf, #ff8c42);
+    color: white;
+    padding: 12px 22px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 10px;
+    transition: 0.3s ease;
+}
+
+.admin-login-btn:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+
+#adminLoginBtn[hidden],
+#adminLogoutBtn[hidden],
+#adminDashboard[hidden] {
+    display: none !important;
+}
+
+/* Admin Logout Button */
+#adminLogoutBtn {
+    display: inline-block;
+    background: linear-gradient(135deg, #702bd1, #ff8c42);
+    color: #ffffff;
+    border: none;
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(112, 43, 209, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin: 12px 20px;
+}
+
+/* Hover effect */
+#adminLogoutBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(112, 43, 209, 0.3);
+}
+
+/* Click effect */
+#adminLogoutBtn:active {
+    transform: scale(0.97);
+}
+
+/* Keep the button hidden when JavaScript hides it */
+#adminLogoutBtn[hidden] {
+    display: none !important;
+}
+
+/* Mobile styling */
+@media (max-width: 600px) {
+    #adminLogoutBtn {
+        padding: 10px 18px;
+        font-size: 14px;
+        margin: 10px 12px;
+    }
+}

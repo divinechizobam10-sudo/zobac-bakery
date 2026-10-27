@@ -1,6 +1,5 @@
 
 const API_BASE_URL = "https://zobac-bakery-8kqp.onrender.com";
-
 function apiFetch(path, options = {}) {
     return fetch(`${API_BASE_URL}${path}`, {
         ...options,
@@ -651,8 +650,7 @@ async function placeOrder() {
 
     try {
      
-const response = await fetch(
-    "https://zobac-bakery-8kqp.onrender.com/api/orders",
+const response = await apiFetch("/api/orders", 
     {
         method: "POST",
         headers: {
@@ -1925,8 +1923,7 @@ try {
     message.style.color = "black";
 
     const response = await fetch(
-        "https://zobac-bakery-8kqp.onrender.com/api/register",
-        {
+`${API_BASE_URL}/api/register`,        {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -2011,6 +2008,7 @@ try {
 
 
 
+
  // ===============================
  // LOGIN - BACKEND
  // ===============================
@@ -2022,12 +2020,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const passwordInput = document.getElementById("loginPassword");
     const message = document.getElementById("loginMessage");
 
-    // This code runs only on the login page.
     if (!loginForm || !loginBtn || !emailInput || !passwordInput || !message) {
         return;
     }
-
-    console.log("LOGIN FORM CONNECTED");
 
     const rememberedEmail = localStorage.getItem("zobacLoginEmail");
 
@@ -2035,7 +2030,6 @@ document.addEventListener("DOMContentLoaded", function () {
         emailInput.value = rememberedEmail;
     }
 
-    // Handle login form submission.
     loginForm.addEventListener("submit", async function (event) {
         event.preventDefault();
 
@@ -2049,21 +2043,17 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         loginBtn.disabled = true;
-        message.style.color = "";
         message.textContent = "Logging in...";
+        message.style.color = "";
 
         try {
-            const response = await fetch(
-                "https://zobac-bakery-8kqp.onrender.com/api/login",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({ email, password })
-                }
-            );
+            const response = await apiFetch("/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email, password })
+            });
 
             const result = await response.json();
 
@@ -2071,8 +2061,24 @@ document.addEventListener("DOMContentLoaded", function () {
                 throw new Error(result.message || "Login failed.");
             }
 
-            localStorage.setItem("zobacLoginEmail", email);
-            localStorage.setItem("zobacCurrentEmail", email);
+            // Verify that the server actually saved the login session.
+            const sessionResponse = await apiFetch("/api/customer/session");
+            const sessionResult = await sessionResponse.json();
+
+            if (
+                !sessionResponse.ok ||
+                sessionResult.authenticated !== true
+            ) {
+                throw new Error(
+                    "Login was accepted, but your session was not saved. Please check the backend session settings."
+                );
+            }
+
+            const customerEmail =
+                sessionResult.customer?.email || email;
+
+            localStorage.setItem("zobacLoginEmail", customerEmail);
+            localStorage.setItem("zobacCurrentEmail", customerEmail);
             localStorage.setItem("zobacLoggedIn", "true");
 
             message.style.color = "green";
@@ -2081,21 +2087,17 @@ document.addEventListener("DOMContentLoaded", function () {
             window.location.href = "index.html";
 
         } catch (error) {
-            console.error("Login failed:", error);
+            console.error("Login/session check failed:", error);
 
             message.style.color = "red";
             message.textContent =
-                error.message === "Failed to fetch"
-                    ? "Cannot connect to the server. Please try again."
-                    : error.message;
+                error.message || "Could not complete login.";
 
         } finally {
             loginBtn.disabled = false;
         }
     });
 });
-
-
 
 
 /* ===============================
@@ -2340,8 +2342,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     try {
         const response = await fetch(
-            "https://zobac-bakery-8kqp.onrender.com/api/customer/session",
-            {
+`${API_BASE_URL}/api/customer/session`,           {
                 credentials: "include"
             }
         );
@@ -2392,7 +2393,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
                 const response = await fetch(
-                    "https://zobac-bakery-8kqp.onrender.com/api/customer/logout",
+                  `${API_BASE_URL}/api/customer/logout`,
                     {
                         method: "POST",
                         credentials: "include"

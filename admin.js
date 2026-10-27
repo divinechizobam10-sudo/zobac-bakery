@@ -375,7 +375,7 @@ if (searchMessage) {
                 confirmPaymentBtn.textContent = "Saving...";
 
                 try {
-                    const response = await fetch(
+                    const response = await apiFetch(
                         `/api/orders/${encodeURIComponent(order.orderNumber)}`,
                         {
                             method: "PATCH",
@@ -667,7 +667,9 @@ actionCell.appendChild(viewDetailsBtn);
 
 }
 
-refreshBtn.addEventListener("click", loadOrders);
+if (refreshBtn) {
+    refreshBtn.addEventListener("click", loadOrders);
+}
 if (orderSearch) {
     orderSearch.addEventListener("input", loadOrders);
 }
@@ -734,13 +736,15 @@ if (printReceiptBtn) {
     });
 }
 
-// Toggle Customer Reviews section
+// =====================================
+// TOGGLE CUSTOMER REVIEWS
+// =====================================
+
 const toggleReviewsBtn = document.getElementById("toggleReviewsBtn");
 const adminReviewsContent = document.getElementById("adminReviewsContent");
-const reviewsToggleIcon = document.getElementById("reviewsToggleIcon");
 
 if (toggleReviewsBtn && adminReviewsContent) {
-    toggleReviewsBtn.addEventListener("click", () => {
+    toggleReviewsBtn.addEventListener("click", async () => {
         const isOpening = adminReviewsContent.hidden;
 
         adminReviewsContent.hidden = !isOpening;
@@ -750,16 +754,15 @@ if (toggleReviewsBtn && adminReviewsContent) {
             String(isOpening)
         );
 
-        if (reviewsToggleIcon) {
-            reviewsToggleIcon.textContent = isOpening ? "－" : "＋";
-        }
+        toggleReviewsBtn.textContent = isOpening
+            ? "Hide Customer Reviews"
+            : "Show Customer Reviews";
 
-        if (isOpening && typeof loadAdminReviews === "function") {
-            loadAdminReviews();
+        if (isOpening) {
+            await loadAdminReviews();
         }
     });
 }
-
 
 // =====================================
 // LOAD AND DISPLAY CUSTOMER REVIEWS
@@ -767,7 +770,7 @@ if (toggleReviewsBtn && adminReviewsContent) {
 
 const adminReviewsList = document.getElementById("adminReviewsList");
 const adminReviewsMessage = document.getElementById("adminReviewsMessage");
-const reviewStatusFilter = document.getElementById("reviewStatusFilter");
+const reviewStatusFilter = document.getElementById("reviewFilter");
 const refreshReviewsBtn = document.getElementById("refreshReviewsBtn");
 
 async function loadAdminReviews() {
@@ -780,9 +783,7 @@ async function loadAdminReviews() {
     adminReviewsList.replaceChildren();
 
     try {
-        const response = await apiFetch("/api/admin/reviews", {
-            credentials: "same-origin"
-        });
+       const response = await apiFetch("/api/admin/reviews");
 
         const reviews = await response.json();
 
@@ -905,7 +906,7 @@ async function updateReviewStatus(reviewId, status) {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                credentials: "same-origin",
+                credentials: "include",
                 body: JSON.stringify({ status })
             }
         );
@@ -950,8 +951,7 @@ async function loadAdminInventory() {
 
     try {
         const response = await apiFetch("/api/admin/inventory", {
-            credentials: "same-origin"
-        });
+        credentials: "include"        });
 
         if (!response.ok) {
             throw new Error("Could not load inventory.");
@@ -1042,62 +1042,73 @@ function escapeInventoryText(value) {
     })[character]);
 }
 
-// Add a new inventory item
+
 const inventoryForm = document.getElementById("inventoryForm");
 
 if (inventoryForm) {
     inventoryForm.addEventListener("submit", async function(event) {
         event.preventDefault();
 
-        const message = document.getElementById("inventoryMessage");
+        const message = document.getElementById("inventoryTableMessage");
         const submitButton = inventoryForm.querySelector(
             'button[type="submit"]'
         );
 
-        const name = document.getElementById("inventoryName").value.trim();
-        const category = document.getElementById("inventoryCategory").value;
+        const name = document.getElementById("inventoryProductName").value.trim();
         const quantity = Number(
             document.getElementById("inventoryQuantity").value
         );
         const lowStockThreshold = Number(
-            document.getElementById("inventoryThreshold").value
+            document.getElementById("inventoryLowStockLimit").value || 5
         );
 
+        if (!name || !Number.isSafeInteger(quantity) || quantity < 0 ||
+            !Number.isSafeInteger(lowStockThreshold) || lowStockThreshold < 0) {
+            message.textContent = "Please enter valid product and stock details.";
+            return;
+        }
+
         submitButton.disabled = true;
-        message.textContent = "Adding inventory item...";
+        message.textContent = "Saving stock...";
 
         try {
             const response = await apiFetch("/api/admin/inventory", {
                 method: "POST",
-                credentials: "same-origin",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
                     name,
-                    category,
                     quantity,
                     lowStockThreshold
                 })
             });
 
-            const result = await response.json();
+            const responseText = await response.text();
+            let result = {};
+
+            if (responseText) {
+                try {
+                    result = JSON.parse(responseText);
+                } catch {
+                    throw new Error("The server returned an invalid response.");
+                }
+            }
 
             if (!response.ok) {
                 throw new Error(
-                    result.message || "Could not add inventory item."
+                    result.message || `Could not save stock (HTTP ${response.status}).`
                 );
             }
 
-            message.textContent = result.message;
+            message.textContent = result.message || "Stock saved successfully.";
             inventoryForm.reset();
-
-            document.getElementById("inventoryThreshold").value = 5;
 
             await loadAdminInventory();
 
         } catch (error) {
-            message.textContent = error.message;
+            console.error("Saving inventory failed:", error);
+            message.textContent = error.message || "Could not save stock.";
         } finally {
             submitButton.disabled = false;
         }
@@ -1134,19 +1145,26 @@ if (inventoryTable) {
         button.disabled = true;
 
         try {
-            const response = await fetch(
-                `/api/admin/inventory/${encodeURIComponent(itemId)}/restock`,
-                {
-                    method: "PATCH",
-                    credentials: "same-origin",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ amount })
-                }
-            );
+           const response = await apiFetch(
+    `/api/admin/inventory/${encodeURIComponent(itemId)}/restock`,
+    {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ amount })
+    }
+);
+           const responseText = await response.text();
+let result = {};
 
-            const result = await response.json();
+if (responseText) {
+    try {
+        result = JSON.parse(responseText);
+    } catch {
+        throw new Error("The server returned an invalid response.");
+    }
+}
 
             if (!response.ok) {
                 throw new Error(
@@ -1174,87 +1192,82 @@ if (refreshInventoryBtn) {
     refreshInventoryBtn.addEventListener("click", loadAdminInventory);
 }
 
-// Load inventory when the admin dashboard opens
 
+/* ===== ADMIN DASHBOARD SESSION CHECK ===== */
 
-/* ===== ADMIN LOGIN AND SESSION CHECK ===== */
-
-const adminLoginPanel = document.getElementById("adminLoginPanel");
 const adminDashboard = document.getElementById("adminDashboard");
-const adminLoginForm = document.getElementById("adminLoginForm");
-const adminLoginMessage = document.getElementById("adminLoginMessage");
-const adminLoginSubmit = document.getElementById("adminLoginSubmit");
-
-function showAdminDashboard(isLoggedIn) {
-    adminLoginPanel.hidden = isLoggedIn;
-    adminDashboard.hidden = !isLoggedIn;
-}
+const adminLoginBtn = document.getElementById("adminLoginBtn");
+const adminLogoutBtn = document.getElementById("adminLogoutBtn");
 
 async function checkAdminSession() {
-    showAdminDashboard(false);
-    adminLoginMessage.textContent = "Checking admin login...";
+    if (adminDashboard) adminDashboard.hidden = true;
+    if (adminLoginBtn) adminLoginBtn.hidden = true;
+    if (adminLogoutBtn) adminLogoutBtn.hidden = true;
 
     try {
         const response = await apiFetch("/api/admin/session");
         const result = await response.json();
 
-        if (response.ok && result.authenticated === true) {
-            showAdminDashboard(true);
-            adminLoginMessage.textContent = "";
-
-            await loadOrders();
-            await loadAdminInventory();
-        } else {
-            adminLoginMessage.textContent =
-                "Please log in to access the dashboard.";
+        if (!response.ok) {
+            throw new Error("Could not verify admin session.");
         }
+
+        if (result.authenticated === true) {
+            // Logged in: show dashboard and Logout only.
+            if (adminDashboard) adminDashboard.hidden = false;
+            if (adminLoginBtn) adminLoginBtn.hidden = true;
+            if (adminLogoutBtn) adminLogoutBtn.hidden = false;
+
+           await loadOrders();
+await loadAdminInventory();
+await loadAdminReviews();
+
+        } else {
+            // Logged out: show Admin Login only.
+            if (adminDashboard) adminDashboard.hidden = true;
+            if (adminLoginBtn) adminLoginBtn.hidden = false;
+            if (adminLogoutBtn) adminLogoutBtn.hidden = true;
+        }
+
     } catch (error) {
-        adminLoginMessage.textContent =
-            "Could not connect to the server. Please try again.";
         console.error("Admin session check failed:", error);
+
+        if (adminDashboard) adminDashboard.hidden = true;
+        if (adminLoginBtn) adminLoginBtn.hidden = false;
+        if (adminLogoutBtn) adminLogoutBtn.hidden = true;
+
+        alert("Could not verify your admin session. Please refresh and try again.");
     }
 }
 
 
-if (adminLoginForm) {
-    adminLoginForm.addEventListener("submit", async function(event) {
-        event.preventDefault();
+// Log out the admin
+async function adminLogout() {
+    if (!confirm("Are you sure you want to log out?")) return;
 
-        adminLoginSubmit.disabled = true;
-        adminLoginMessage.textContent = "Logging in...";
+    if (adminLogoutBtn) adminLogoutBtn.disabled = true;
 
-        try {
-            const response = await apiFetch("/api/admin/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    username: document.getElementById("adminUsername").value.trim(),
-                    password: document.getElementById("adminPassword").value
-                })
-            });
+    try {
+        const response = await apiFetch("/api/admin/logout", {
+            method: "POST"
+        });
 
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || "Admin login failed.");
-            }
-
-            showAdminDashboard(true);
-            adminLoginMessage.textContent = "Login successful!";
-
-            await loadOrders();
-            await loadAdminInventory();
-
-        } catch (error) {
-            adminLoginMessage.textContent = error.message;
-            showAdminDashboard(false);
-        } finally {
-            adminLoginSubmit.disabled = false;
+        if (!response.ok) {
+            throw new Error("Logout failed. Please try again.");
         }
-    });
+
+        window.location.replace("admin-login.html");
+
+    } catch (error) {
+        console.error("Admin logout failed:", error);
+        alert(error.message || "Could not log out.");
+
+        if (adminLogoutBtn) adminLogoutBtn.disabled = false;
+    }
 }
 
 
-checkAdminSession();
+// Check the session when the page opens.
+if (adminDashboard) {
+    checkAdminSession();
+}

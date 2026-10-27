@@ -1,349 +1,566 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Zobac Bakery - Admin Dashboard</title>
+
     <link rel="stylesheet" href="admin.css">
+
+    <style>
+        /* Login screen */
+        #adminLoginPanel[hidden],
+        #adminDashboard[hidden] {
+            display: none !important;
+        }
+
+        #adminLoginPanel {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #702bd1, #ff8c42);
+        }
+
+        .admin-login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 30px;
+            box-sizing: border-box;
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-login-card h1 {
+            color: #4b2e24;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .admin-login-card > p {
+            text-align: center;
+        }
+
+        #adminLoginForm {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #adminLoginForm input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        #adminLoginSubmit {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            background: #702bd1;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #adminLoginSubmit:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        #adminLoginMessage {
+            overflow-wrap: anywhere;
+            text-align: center;
+            color: #b42318;
+        }
+
+        /* Dashboard layout */
+        .admin-content {
+            padding: 20px;
+        }
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .admin-stat-card,
+        .admin-section {
+            padding: 18px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .admin-section {
+            overflow-x: auto;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 750px;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        .admin-table th {
+            background: #f5efff;
+        }
+
+        .admin-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .admin-toolbar input,
+        .admin-toolbar select,
+        .admin-section input,
+        .admin-section select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .admin-section button,
+        .admin-header button {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .admin-message {
+            margin: 12px 0;
+        }
+
+        /* Receipt modal */
+        #receiptModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.65);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .receipt-modal-content {
+            width: 100%;
+            max-width: 650px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-sizing: border-box;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        #receiptDetails {
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 600px) {
+            .admin-content {
+                padding: 12px;
+            }
+
+            .admin-login-card {
+                padding: 22px;
+            }
+
+            .receipt-modal-content {
+                padding: 15px;
+            }
+        }
+    </style>
 </head>
+
 <body>
+
+
+    <!-- ============================= -->
+    <!-- ADMIN DASHBOARD               -->
+    <!-- Hidden until login succeeds   -->
+    <!-- ============================= -->
+
+    
+<!-- Admin Login stays outside the hidden dashboard -->
+<a href="admin-login.html"
+   id="adminLoginBtn"
+   class="admin-login-btn"
+   hidden>
+    Admin Login
+</a>
+
 <div id="adminDashboard" hidden>
-    <header class="admin-header">
-        <div class="admin-brand">
-            <img src="logo.jpg" alt="Zobac Bakery Logo">
+    <button
+    type="button"
+    id="adminLogoutBtn"
+    onclick="adminLogout()"
+>
+    Logout
+</button>
+        <header class="admin-header">
+
+
             <div>
                 <h1>Zobac Bakery</h1>
                 <p>Admin Dashboard</p>
             </div>
+
+           
+        </header>
+
+
+        <main class="admin-content">
+
+            <!-- WELCOME -->
+            <section class="admin-section">
+                <h2>Welcome, Admin!</h2>
+                <p>Manage your bakery orders, sales, reviews, and inventory here.</p>
+            </section>
+
+
+            <!-- ============================= -->
+            <!-- CUSTOMER REVIEWS               -->
+            <!-- ============================= -->
+
+            <section class="admin-section" id="adminReviewsSection">
+
+                <button
+    type="button"
+    id="toggleReviewsBtn"
+    aria-expanded="false"
+>
+    Show Customer Reviews
+</button>
+
+                <div id="adminReviewsContent" hidden>
+                    <h2>Customer Reviews</h2>
+
+                    <div class="admin-toolbar">
+                        <label for="reviewFilter">Filter reviews:</label>
+
+                       <select id="reviewFilter">
+    <option value="">All Reviews</option>
+    <option value="pending">Pending</option>
+    <option value="approved">Approved</option>
+    <option value="rejected">Rejected</option>
+</select>
+
+                        <button type="button" id="refreshReviewsBtn">
+                            Refresh Reviews
+                        </button>
+                    </div>
+
+                    <p id="adminReviewsMessage" class="admin-message" aria-live="polite"></p>
+
+                    <div id="adminReviewsList">
+                        <p>Customer reviews will appear here.</p>
+                    </div>
+                </div>
+
+            </section>
+
+
+            <!-- ============================= -->
+            <!-- DASHBOARD STATISTICS           -->
+            <!-- ============================= -->
+
+            <section>
+                <h2>Business Overview</h2>
+
+                <div class="admin-stats">
+
+                    <div class="admin-stat-card">
+                        <h3>Total Orders</h3>
+                        <p id="totalOrders">0</p>
+                    </div>
+
+                    <div class="admin-stat-card">
+                        <h3>Pending Orders</h3>
+                        <p id="pendingOrders">0</p>
+                    </div>
+
+                    <div class="admin-stat-card">
+                        <h3>Preparing Orders</h3>
+                        <p id="preparingOrders">0</p>
+                    </div>
+
+                    <div class="admin-stat-card">
+                        <h3>Delivered Orders</h3>
+                        <p id="deliveredOrders">0</p>
+                    </div>
+
+                    <div class="admin-stat-card">
+                        <h3>Today's Sales</h3>
+                        <p id="todaySales">₦0</p>
+                    </div>
+
+                    <div class="admin-stat-card">
+                        <h3>This Month's Sales</h3>
+                        <p id="monthlySales">₦0</p>
+                    </div>
+
+                    <div class="admin-stat-card">
+                        <h3>Total Confirmed Sales</h3>
+                        <p id="totalSales">₦0</p>
+                    </div>
+
+                    <div class="admin-stat-card">
+                        <h3>Pending Payments</h3>
+                        <p id="pendingPayments">₦0</p>
+                    </div>
+
+                </div>
+            </section>
+
+
+            <!-- ============================= -->
+            <!-- WEEKLY SALES CHART             -->
+            <!-- ============================= -->
+
+            <section class="admin-section">
+                <h2>Weekly Sales</h2>
+                <canvas id="weeklySalesChart"></canvas>
+            </section>
+
+
+            <!-- ============================= -->
+            <!-- ORDER MANAGEMENT               -->
+            <!-- ============================= -->
+
+            <section class="admin-section">
+
+                <h2>Customer Orders</h2>
+
+                <div class="admin-toolbar">
+
+                    <input
+                        type="search"
+                        id="orderSearch"
+                        placeholder="Search by order number"
+                        aria-label="Search orders"
+                    >
+
+                    <button type="button" id="clearOrderSearch">
+                        Clear Search
+                    </button>
+
+                    <button type="button" id="refreshOrdersBtn">
+                        Refresh Orders
+                    </button>
+
+                </div>
+
+                <p id="ordersMessage" class="admin-message" aria-live="polite"></p>
+
+                <div style="overflow-x: auto;">
+
+                    <table class="admin-table" id="ordersTableElement">
+
+                        <thead>
+                            <tr>
+                                <th>Order Number</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Items</th>
+                               <th>Delivery Date</th>
+                                <th>Payment</th>
+                               <th>Payment Status</th>
+                                <th>Order Status</th>
+                                  <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="ordersTable">
+                            <tr>
+                                <td colspan="11">Orders will load here.</td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+            <!-- ============================= -->
+            <!-- INVENTORY MANAGEMENT           -->
+            <!-- ============================= -->
+
+            <section class="admin-section" id="inventorySection">
+
+                <h2>Inventory Management</h2>
+
+                <div class="admin-stats">
+
+                    <div class="admin-stat-card">
+                        <h3>Total Products</h3>
+                        <p id="inventoryTotalProducts">0</p>
+                    </div>
+
+                    <div class="admin-stat-card">
+                        <h3>Low Stock</h3>
+                        <p id="inventoryLowStock">0</p>
+                    </div>
+
+                    <div class="admin-stat-card">
+                        <h3>Out of Stock</h3>
+                        <p id="inventoryOutOfStock">0</p>
+                    </div>
+
+                </div>
+
+                <h3>Add or Update Product Stock</h3>
+
+                <form id="inventoryForm">
+
+                    <div class="admin-toolbar">
+
+                        <input
+                            type="text"
+                            id="inventoryProductName"
+                            name="productName"
+                            placeholder="Product name"
+                            required
+                        >
+
+                        <input
+                            type="number"
+                            id="inventoryQuantity"
+                            name="quantity"
+                            placeholder="Quantity"
+                            min="0"
+                            required
+                        >
+
+                        <input
+                            type="number"
+                            id="inventoryLowStockLimit"
+                            name="lowStockLimit"
+                            placeholder="Low stock limit"
+                            min="0"
+                        >
+
+                        <button type="submit">
+                            Save Stock
+                        </button>
+
+                    </div>
+
+                </form>
+
+                <div class="admin-toolbar">
+                    <button type="button" id="refreshInventoryBtn">
+                        Refresh Inventory
+                    </button>
+                </div>
+
+                <p
+                    id="inventoryTableMessage"
+                    class="admin-message"
+                    aria-live="polite"
+                ></p>
+
+                <div style="overflow-x: auto;">
+
+                    <table class="admin-table">
+
+                       
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Status</th>
+                                <th>Low Stock Limit</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+
+                        
+                        <tbody id="inventoryTable">
+                            <tr>
+                                <td colspan="6">Inventory will load here.</td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <!-- ============================= -->
+        <!-- ORDER RECEIPT MODAL            -->
+        <!-- ============================= -->
+
+        <div id="receiptModal" role="dialog" aria-modal="true" aria-label="Order receipt">
+
+            <div class="receipt-modal-content">
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="button" id="closeReceipt">
+                        Close
+                    </button>
+                </div>
+
+                <div id="receiptDetails">
+                    <p>Order receipt details will appear here.</p>
+                </div>
+
+                <div class="admin-toolbar">
+                    <button type="button" id="printReceipt">
+                        Print Receipt
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="document.getElementById('receiptModal').style.display='none';"
+                    >
+                        Cancel
+                    </button>
+                </div>
+
+            </div>
+
         </div>
 
-        <button id="refreshBtn" class="refresh-btn">
-            Refresh Orders
-        </button>
-    </header>
-
-    <main class="admin-container">
-
-<!-- CUSTOMER REVIEWS BUTTON -->
-<section class="admin-reviews-section">
-
-    <button
-        type="button"
-        id="toggleReviewsBtn"
-        class="toggle-reviews-btn"
-        aria-expanded="false"
-        aria-controls="adminReviewsContent"
-    >
-        ⭐ Customer Reviews <span id="reviewsToggleIcon">＋</span>
-    </button>
-
-    <div id="adminReviewsContent" hidden>
-        <p>Review customer feedback and approve or reject submissions.</p>
-
-        <div class="review-admin-filters">
-            <label for="reviewStatusFilter">Filter Reviews:</label>
-
-            <select id="reviewStatusFilter">
-                <option value="">All Reviews</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-            </select>
-
-            <button type="button" id="refreshReviewsBtn">
-                Refresh Reviews
-            </button>
-        </div>
-
-        <p id="adminReviewsMessage">Reviews will appear here.</p>
-
-        <div id="adminReviewsList" class="admin-reviews-list"></div>
     </div>
 
-</section>
-       
-<section class="welcome-section">
-    <h2>Welcome, Admin!</h2>
-    <p>Manage your bakery orders in one place.</p>
-</section>
 
-<section class="stats-grid">
-    <div class="stat-card">
-        <h3>Total Orders</h3>
-        <p id="totalOrders">0</p>
-    </div>
-
-    <div class="stat-card">
-        <h3>Pending Orders</h3>
-        <p id="pendingOrders">0</p>
-    </div>
-
-    <div class="stat-card">
-        <h3>Preparing</h3>
-        <p id="preparingOrders">0</p>
-    </div>
-
-    <div class="stat-card">
-        <h3>Delivered</h3>
-        <p id="deliveredOrders">0</p>
-    </div>
-
-    <div class="stat-card">
-        <h3>Total Sales</h3>
-        <p id="totalSales">₦0</p>
-    </div>
-
-    <div class="stat-card">
-        <h3>Pending Payments</h3>
-        <p id="pendingPayments">₦0</p>
-    </div>
-    
-<div class="stat-card">
-    <h3>Today's Sales</h3>
-    <p id="todaySales">₦0</p>
-</div>
-
-<div class="stat-card">
-    <h3>This Month's Sales</h3>
-    <p id="monthlySales">₦0</p>
-</div>
-
-</section>
-
-<section class="weekly-sales-section">
-    <h2>Sales Overview — Last 7 Days</h2>
-    <p>Daily revenue from confirmed payments</p>
-    <div id="weeklySalesChart" class="weekly-sales-chart">
-        Loading sales chart...
-    </div>
-</section>
-
-<section class="orders-section">
-    <h2>Customer Orders</h2>
-    
-<div class="order-filters">
-    <select id="statusFilter">
-        <option value="">All Order Statuses</option>
-        <option value="Order Received">Order Received</option>
-        <option value="Preparing">Preparing</option>
-        <option value="Out for Delivery">Out for Delivery</option>
-        <option value="Delivered">Delivered</option>
-    </select>
-
-    <select id="paymentFilter">
-        <option value="">All Payment Statuses</option>
-        <option value="Pending">Pending Payment</option>
-        <option value="Payment Confirmed">Payment Confirmed</option>
-    </select>
-
-    <input type="date" id="dateFilter">
-
-    <button type="button" id="clearFilters">
-        Clear Filters
-    </button>
-</div>
-
-    <div id="ordersMessage">
-        Loading orders...
-    </div>
-
-    <div class="order-search">
-        <label for="orderSearch">Search Order ID</label>
-
-        <div class="order-search-box">
-            <input
-                type="search"
-                id="orderSearch"
-                placeholder="Enter order ID, e.g. ZOBAC-123456"
-                autocomplete="off"
-            >
-
-            <button type="button" id="clearOrderSearch">
-                Clear
-            </button>
-        </div>
-
-        <p id="searchMessage"></p>
-    </div>
-
-    <div class="orders-table-wrapper">
-        <table class="orders-table">
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Phone</th>
-                    <th>Delivery Address</th>
-                    <th>Products Bought</th>
-                    <th>Delivery Date</th>
-                    <th>Payment Method</th>
-                    <th>Payment Status</th>
-                    <th>Order Status</th>
-                    <th>Total</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-
-            <tbody id="ordersTable">
-                <tr>
-                    <td colspan="11">Loading orders...</td>
-                </tr>
-            </tbody>
-        </table>
-      </div>
-
-</section>
-
-<!-- INVENTORY MANAGEMENT -->
-<section class="inventory-section">
-    <h2>📦 Inventory Management</h2>
-    <p>Manage available products, monitor stock, and restock your bakery items.</p>
-
-    <div class="inventory-summary">
-        <div class="inventory-stat-card">
-            <h3>Total Products</h3>
-            <p id="inventoryTotalProducts">0</p>
-        </div>
-
-        <div class="inventory-stat-card">
-            <h3>Low Stock Items</h3>
-            <p id="inventoryLowStock">0</p>
-        </div>
-
-        <div class="inventory-stat-card">
-            <h3>Out of Stock</h3>
-            <p id="inventoryOutOfStock">0</p>
-        </div>
-    </div>
-
-    <div class="inventory-form-wrapper">
-        <h3>Add New Inventory Item</h3>
-
-        <form id="inventoryForm">
-            <label for="inventoryName">Product Name</label>
-            <input
-                type="text"
-                id="inventoryName"
-                placeholder="e.g. Butter Bread"
-                required
-            >
-
-            <label for="inventoryCategory">Category</label>
-            <select id="inventoryCategory" required>
-                <option value="Bread">Bread</option>
-                <option value="Cakes">Cakes</option>
-                <option value="Pastries">Pastries</option>
-                <option value="Snacks">Snacks</option>
-                <option value="Drinks">Drinks</option>
-                <option value="Other">Other</option>
-            </select>
-
-            <label for="inventoryQuantity">Available Quantity</label>
-            <input
-                type="number"
-                id="inventoryQuantity"
-                min="0"
-                step="1"
-                placeholder="e.g. 20"
-                required
-            >
-
-            <label for="inventoryThreshold">Low Stock Warning Level</label>
-            <input
-                type="number"
-                id="inventoryThreshold"
-                min="0"
-                step="1"
-                value="5"
-                required
-            >
-
-            <button type="submit">Add Inventory Item</button>
-        </form>
-
-        <p id="inventoryMessage" role="status"></p>
-    </div>
-
-    <div class="inventory-table-wrapper">
-        <h3>Current Stock</h3>
-
-        <button type="button" id="refreshInventoryBtn">
-            Refresh Inventory
-        </button>
-
-        <div id="inventoryTableMessage">Loading inventory...</div>
-
-        <table class="inventory-table">
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Category</th>
-                    <th>Available Stock</th>
-                    <th>Stock Status</th>
-                    <th>Low Stock Level</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-
-            <tbody id="inventoryTable">
-                <tr>
-                    <td colspan="6">Loading inventory...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</section>
-
-</main>
-
-    
-<div id="receiptModal" class="receipt-modal" style="display: none;">
-    <div class="receipt-content">
-        <button type="button" id="closeReceipt" class="close-receipt">
-            &times;
-        </button>
-
-        <h2>Zobac Bakery</h2>
-        <p>Start your day with joy!</p>
-
-        <h3>Order Receipt</h3>
-
-        <div id="receiptDetails"></div>
-
-        <button type="button" id="printReceipt">Print Receipt</button>
-    </div>
-</div>
-</div>
-</div>
+    <!-- Load your existing dashboard JavaScript last -->
     <script src="admin.js"></script>
 
-
-
 </body>
-<body>
-
-<section id="adminLoginPanel"
-    style="max-width:420px; margin:30px auto; padding:20px;">
-
-    <h2>Admin Login</h2>
-    <p>Log in to manage Zobac Bakery.</p>
-
-    <form id="adminLoginForm">
-        <label for="adminUsername">Username</label>
-        <input type="text" id="adminUsername"
-            autocomplete="username" required>
-
-        <label for="adminPassword">Password</label>
-        <input type="password" id="adminPassword"
-            autocomplete="current-password" required>
-
-        <button type="submit" id="adminLoginSubmit">Login</button>
-    </form>
-
-    <p id="adminLoginMessage" role="status"></p>
-</section>
-
-<div id="adminDashboard" hidden>
-
 </html>
-
