@@ -216,7 +216,7 @@ function showCart() {
     cartItems.innerHTML = "";
 
     if (cart.length === 0) {
-        cartItems.innerHTML = "<p>Your cart is empty.</p>";
+cartItems.innerHTML = "<p>Your cart is empty. Visit our shop and add your favourite treats!</p>";
         cartTotal.textContent = "Total: ₦0";
         updateCartCount();
         return;
@@ -441,20 +441,23 @@ async function placeOrder() {
     );
 
     if (!selectedPayment) {
-        document.getElementById("paymentMessage").textContent =
-            "Please choose a payment method.";
-        return;
-    }
-
+    document.getElementById("paymentMessage").textContent =
+        "Please select how you would like to pay before placing your order.";
+    return;
+}
     const paymentMethod = selectedPayment.value;
+    if (!name || !phone || !address || !date) {
+    document.getElementById("paymentMessage").textContent =
+        "Please complete your name, phone number, delivery address and delivery date.";
+    return;
+}
 
     if (
         paymentMethod === "Bank Transfer" &&
         document.getElementById("transferConfirmation").dataset.confirmed !== "true"
     ) {
         document.getElementById("paymentMessage").textContent =
-            "Please click I've Done the Transfer before placing your order.";
-        return;
+"Please confirm your bank transfer before placing your order.";        return;
     }
 
 
@@ -611,10 +614,10 @@ async function placeOrder() {
     }
 
 
-    if (cart.length === 0) {
-        showNotification("Your cart is empty.");
-        return;
-    }
+   if (cart.length === 0) {
+    showNotification("Your cart is empty. Please add some delicious treats before placing an order.");
+    return;
+}
 
     const total = cart.reduce(function (sum, item) {
         return sum + item.price * item.quantity;
@@ -690,17 +693,17 @@ const result = await response.json();
         document.getElementById("viewOrderBtn").style.display =
             "inline-block";
 
-        orderMessage.textContent =
-            "Order placed successfully! Order: " + orderNumber +
-            ". Payment is pending confirmation.";
+       orderMessage.textContent =
+    "Thank you for ordering from Zobac Bakery! Your order " + orderNumber +
+    " has been received successfully. We will keep you updated.";
 
         orderMessage.style.color = "#6b247f";
         orderMessage.style.fontWeight = "bold";
 
         paymentMessage.textContent =
             paymentMethod === "Bank Transfer"
-                ? "Your transfer will be verified manually by Zobac Bakery."
-                : "Please pay at the bakery. Your payment is still pending.";
+                ? "Thank you! Zobac Bakery will verify your bank transfer and update your payment status."
+              : "Your order is received! Please make your payment at the bakery. Your payment status will be updated once confirmed.";
 
     } catch (error) {
         console.error("Order submission error:", error);
@@ -711,10 +714,18 @@ const result = await response.json();
         );
         saveCustomerOrders(savedOrders);
 
-        orderMessage.textContent =
-            "We couldn't submit your order to the bakery. " +
-            "Please try again. Your cart has been kept.";
+     const errorMessage = error.message || "";
 
+if (
+    errorMessage.toLowerCase().includes("log in") ||
+    errorMessage.toLowerCase().includes("customer account not found")
+) {
+    orderMessage.textContent =
+    "Please log in to your Zobac Bakery account to place your order. If you don't have an account yet, you can register for free.";
+} else {
+    orderMessage.textContent =
+        errorMessage ||
+"We couldn't complete your order right now. Please check your connection and try again. Don't worry, the items in your cart are still saved.";}
         orderMessage.style.color = "#b45309";
         orderMessage.style.fontWeight = "bold";
 
@@ -832,8 +843,7 @@ if (transferButton) {
 
                 if (transferMessage) {
                     transferMessage.textContent =
-                        "Your payment still needs to be verified by the bakery.";
-                }
+"Thank you for confirming your transfer! Our team will verify your payment and update your order shortly."                }
             });
         }
 
@@ -940,8 +950,8 @@ async function showOrders() {
 
     if (orders.length === 0) {
 
-        ordersList.innerHTML =
-            "<p>No orders yet.</p>";
+      ordersList.innerHTML =
+    "<p>You haven't placed any orders yet. Explore our delicious treats and place your first order today!</p>";
 
         return;
     }
