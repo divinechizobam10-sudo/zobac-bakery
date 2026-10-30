@@ -1517,53 +1517,57 @@ app.get("/api/admin/brevo-check", async (req, res) => {
     if (req.session?.adminAuthenticated !== true) {
         return res.status(401).json({
             success: false,
-            message: "Please log in as admin first."
+            message: "Admin login required."
         });
     }
 
     try {
-        if (!process.env.BREVO_API_KEY) {
-            return res.status(500).json({
-                success: false,
-                message: "BREVO_API_KEY is missing in Render."
-            });
-        }
-
-        const response = await fetch("https://api.brevo.com/v3/smtp/templates", {
-            method: "GET",
+        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+            method: "POST",
             headers: {
                 accept: "application/json",
-                "api-key": process.env.BREVO_API_KEY
+                "api-key": process.env.BREVO_API_KEY,
+                "content-type": "application/json"
             },
+            body: JSON.stringify({
+                sender: {
+                    name: "Zobac Bakery",
+                    email: process.env.BREVO_FROM_EMAIL
+                },
+                to: [
+                    { email: process.env.BAKERY_EMAIL }
+                ],
+                subject: "Zobac Bakery - Test Email",
+                textContent: "This is a test email from Zobac Bakery. Your bakery email notification connection is working."
+            }),
             signal: AbortSignal.timeout(15000)
         });
 
-        console.log("BREVO ACCOUNT CHECK STATUS:", response.status);
+        const result = await response.text();
 
         if (!response.ok) {
-            const details = await response.text();
-            console.error("BREVO ACCOUNT CHECK ERROR:", details);
+            console.error("BREVO TEST EMAIL FAILED:", response.status, result);
 
             return res.status(response.status).json({
                 success: false,
-                status: response.status,
-                message: "Brevo rejected the API request. Check Render logs."
+                message: "Brevo could not send the test email.",
+                details: result
             });
         }
 
+        console.log("BREVO TEST EMAIL ACCEPTED:", result);
+
         return res.json({
             success: true,
-            message: "Brevo API connection successful."
+            message: "Brevo accepted the test email. Check the bakery inbox."
         });
-    } catch (error) {
-        console.error("BREVO CONNECTION CHECK FAILED:", error.message);
-        console.error("BREVO ERROR CODE:", error.cause?.code || "Not provided");
 
-        return res.status(502).json({
+    } catch (error) {
+        console.error("BREVO TEST EMAIL ERROR:", error.message);
+
+        return res.status(500).json({
             success: false,
-            message: error.name === "TimeoutError"
-                ? "Brevo connection timed out."
-                : "Could not connect to Brevo. Check Render logs."
+            message: error.message
         });
     }
 });
