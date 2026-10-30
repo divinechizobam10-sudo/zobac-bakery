@@ -1529,7 +1529,7 @@ app.get("/api/admin/brevo-check", async (req, res) => {
             });
         }
 
-        const response = await fetch("https://api.brevo.com/v3/account", {
+        const response = await fetch("https://api.brevo.com/v3/smtp/templates", {
             method: "GET",
             headers: {
                 accept: "application/json",
