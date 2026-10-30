@@ -1175,13 +1175,14 @@ console.log("ORDER DATA:", JSON.stringify(order, null, 2));
             });
         }
 
-      // Check Resend settings without blocking order checkout.
+    
+// Check Brevo settings without blocking order checkout.
 if (
-    !process.env.RESEND_API_KEY ||
-    !process.env.RESEND_FROM_EMAIL ||
+    !process.env.BREVO_API_KEY ||
+    !process.env.BREVO_FROM_EMAIL ||
     !process.env.BAKERY_EMAIL
 ) {
-    console.error("Resend email settings are incomplete.");
+    console.error("Brevo email settings are incomplete.");
 }
         // Load saved orders and prevent duplicate order numbers.
 const savedOrders = await loadOrdersFromDatabase();
@@ -1337,62 +1338,63 @@ const savedOrder = {
         
 console.log("ORDER VALIDATED AND SAVED");
 
+        // Send the bakery email through Brevo.
+        let emailSent = false;
 
-    // Email notification is separate from order saving.
-    // An email failure must not undo a saved order.
-    let emailSent = false;
+        try {
+            if (
+                !process.env.BREVO_API_KEY ||
+                !process.env.BREVO_FROM_EMAIL ||
+                !process.env.BAKERY_EMAIL
+            ) {
+                throw new Error("Brevo email settings are incomplete.");
+            }
 
-    try {
-        if (
-            !process.env.EMAIL_USER ||
-            !process.env.EMAIL_PASS ||
-            !process.env.BAKERY_EMAIL
-        ) {
-            throw new Error("Gmail email settings are incomplete.");
-        }
+            const itemDetails = order.items.map(item => {
+                const quantity = Number(item.quantity);
+                const price = getTrustedPrice(item);
+                const customization = item.customization || {};
 
-       const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            },
-            connectionTimeout: 15000,
-            greetingTimeout: 15000,
-            socketTimeout: 20000
-        });
+                const details = Object.entries(customization)
+                    .filter(([key, value]) =>
+                        value !== "" &&
+                        value !== null &&
+                        value !== undefined
+                    )
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join(", ");
 
-        const itemDetails = order.items.map(item => {
-            const quantity = Number(item.quantity);
-            const price = getTrustedPrice(item);
-            const customization = item.customization || {};
+                return [
+                    `${item.name || item.productName}`,
+                    `Qty: ${quantity}`,
+                    `Price: ₦${(
+                        price * quantity
+                    ).toLocaleString("en-NG")}`,
+                    details ? `Customization: ${details}` : ""
+                ].filter(Boolean).join(" | ");
+            }).join("\n");
 
-            const details = Object.entries(customization)
-                .filter(([key, value]) =>
-                    value !== "" &&
-                    value !== null &&
-                    value !== undefined
-                )
-                .map(([key, value]) => `${key}: ${value}`)
-                .join(", ");
-
-            return [
-                `${item.name || item.productName}`,
-                `Qty: ${quantity}`,
-                `Price: ₦${(
-                    price * quantity
-                ).toLocaleString("en-NG")}`,
-                details ? `Customization: ${details}` : ""
-            ].filter(Boolean).join(" | ");
-        }).join("\n");
-
-        await transporter.sendMail({
-            from: `"Zobac Bakery" <${process.env.EMAIL_USER}>`,
-            to: process.env.BAKERY_EMAIL,
-            subject: `New Zobac Bakery Order - ${order.orderNumber}`,
-            text: `
+            const emailResponse = await fetch(
+                "https://api.brevo.com/v3/smtp/email",
+                {
+                    method: "POST",
+                    headers: {
+                        "accept": "application/json",
+                        "api-key": process.env.BREVO_API_KEY,
+                        "content-type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        sender: {
+                            name: "Zobac Bakery",
+                            email: process.env.BREVO_FROM_EMAIL
+                        },
+                        to: [
+                            {
+                                email: process.env.BAKERY_EMAIL
+                            }
+                        ],
+                        subject: `New Zobac Bakery Order - ${order.orderNumber}`,
+                        textContent: `
 NEW ZOBAC BAKERY ORDER
 
 Order number: ${order.orderNumber}
@@ -1414,34 +1416,43 @@ ${itemDetails}
 Verified order total: ₦${calculatedTotal.toLocaleString("en-NG")}
 
 Please verify payment before dispatch.
-            `
+                        `
+                    })
+                }
+            );
+
+            if (!emailResponse.ok) {
+                const errorDetails = await emailResponse.text();
+                throw new Error(
+                    `Brevo API error (${emailResponse.status}): ${errorDetails}`
+                );
+            }
+
+            emailSent = true;
+            console.log("BAKERY EMAIL SENT SUCCESSFULLY");
+
+       
+} catch (emailError) {
+    console.error("BAKERY EMAIL FAILED:", emailError.message);
+    console.error("EMAIL ERROR NAME:", emailError.name);
+    console.error("EMAIL ERROR CODE:", emailError.cause?.code || "Not provided");
+}
+
+        // The order is saved even if email sending fails.
+        return res.status(201).json({
+            success: true,
+            message: emailSent
+                ? "Order placed successfully. Bakery notification sent."
+                : "Order placed successfully. Email notification could not be sent.",
+            orderNumber: savedOrder.orderNumber,
+            status: savedOrder.status,
+            paymentMethod: savedOrder.paymentMethod,
+            paymentStatus: savedOrder.paymentStatus,
+            emailSent: emailSent
         });
 
-        emailSent = true;
-        console.log("BAKERY EMAIL SENT SUCCESSFULLY");
-
-    } catch (emailError) {
-        console.error(
-            "BAKERY EMAIL FAILED:",
-            emailError.message
-        );
-    }
 
    
-// The order was already saved, so return success even if
-// the email notification could not be delivered.
-return res.status(201).json({
-    success: true,
-    message: emailSent
-        ? "Order placed successfully. Bakery notification sent."
-        : "Order placed successfully. Email notification could not be sent.",
-    orderNumber: savedOrder.orderNumber,
-    status: savedOrder.status,
-    paymentMethod: savedOrder.paymentMethod,
-    paymentStatus: savedOrder.paymentStatus,
-    emailSent: emailSent
-});
-
     }catch (error) {
         console.error("ORDER OR EMAIL ERROR:", error);
 
@@ -1456,6 +1467,9 @@ return res.status(201).json({
     
 // Return orders belonging only to the logged-in customer.
 app.get("/api/customer/orders", async (req, res) => {
+    
+
+
     if (
         req.session?.customerAuthenticated !== true ||
         !req.session.customerId
@@ -1495,6 +1509,61 @@ const customerOrders = (await loadOrdersFromDatabase()).filter(            order
         return res.status(500).json({
             success: false,
             message: "Could not retrieve your orders."
+        });
+    }
+});
+
+app.get("/api/admin/brevo-check", async (req, res) => {
+    if (req.session?.adminAuthenticated !== true) {
+        return res.status(401).json({
+            success: false,
+            message: "Please log in as admin first."
+        });
+    }
+
+    try {
+        if (!process.env.BREVO_API_KEY) {
+            return res.status(500).json({
+                success: false,
+                message: "BREVO_API_KEY is missing in Render."
+            });
+        }
+
+        const response = await fetch("https://api.brevo.com/v3/account", {
+            method: "GET",
+            headers: {
+                accept: "application/json",
+                "api-key": process.env.BREVO_API_KEY
+            },
+            signal: AbortSignal.timeout(15000)
+        });
+
+        console.log("BREVO ACCOUNT CHECK STATUS:", response.status);
+
+        if (!response.ok) {
+            const details = await response.text();
+            console.error("BREVO ACCOUNT CHECK ERROR:", details);
+
+            return res.status(response.status).json({
+                success: false,
+                status: response.status,
+                message: "Brevo rejected the API request. Check Render logs."
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: "Brevo API connection successful."
+        });
+    } catch (error) {
+        console.error("BREVO CONNECTION CHECK FAILED:", error.message);
+        console.error("BREVO ERROR CODE:", error.cause?.code || "Not provided");
+
+        return res.status(502).json({
+            success: false,
+            message: error.name === "TimeoutError"
+                ? "Brevo connection timed out."
+                : "Could not connect to Brevo. Check Render logs."
         });
     }
 });
