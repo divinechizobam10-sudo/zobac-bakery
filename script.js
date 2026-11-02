@@ -396,20 +396,6 @@ function saveCustomerOrders(orders) {
 }
 
 
-function saveCustomerOrders(orders) {
-
-    const key =
-        getCustomerStorageKey("Orders");
-
-    if (!key) {
-        return;
-    }
-
-    localStorage.setItem(
-        key,
-        JSON.stringify(orders)
-    );
-}
 
 
 // ===============================
@@ -893,8 +879,15 @@ async function syncCustomerOrderStatuses() {
         }
 
         const localOrders = getCustomerOrders();
-
+        const hiddenOrderNumbers = JSON.parse(
+    localStorage.getItem(
+        getCustomerStorageKey("HiddenOrders")
+    ) || "[]"
+);
         customerServerOrders.forEach(serverOrder => {
+         if (hiddenOrderNumbers.includes(serverOrder.orderNumber)) {
+    return;
+}
             const existingOrder = localOrders.find(
                 order =>
                     order.orderNumber === serverOrder.orderNumber
@@ -1211,12 +1204,22 @@ if (yesDeleteBtn) {
                 );
 
 
-            if (orderIndex !== -1) {
+          if (orderIndex !== -1) {
 
-                orders.splice(
-                    orderIndex,
-                    1
-                );
+    const hiddenOrderNumbers = JSON.parse(
+        localStorage.getItem(
+            getCustomerStorageKey("HiddenOrders")
+        ) || "[]"
+    );
+
+    hiddenOrderNumbers.push(pendingOrderNumber);
+
+    localStorage.setItem(
+        getCustomerStorageKey("HiddenOrders"),
+        JSON.stringify(hiddenOrderNumbers)
+    );
+
+    orders.splice(orderIndex, 1);
 
 
                 // Save ONLY current customer's orders
@@ -2526,72 +2529,93 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!savePasswordBtn) return;
 
-    savePasswordBtn.addEventListener("click", function (event) {
+    savePasswordBtn.addEventListener("click", async function (event) {
         event.preventDefault();
 
-        const currentPassword = document.getElementById("currentPassword").value;
-        const newPassword = document.getElementById("newPassword").value;
-        const confirmNewPassword = document.getElementById("confirmNewPassword").value;
-        const message = document.getElementById("passwordMessage");
+        const currentPassword =
+            document.getElementById("currentPassword").value;
+
+        const newPassword =
+            document.getElementById("newPassword").value;
+
+        const confirmNewPassword =
+            document.getElementById("confirmNewPassword").value;
+
+        const message =
+            document.getElementById("passwordMessage");
 
         message.textContent = "";
+        message.style.color = "red";
 
-        let account;
-
-        try {
-            account = JSON.parse(localStorage.getItem("zobacAccount"));
-        } catch (error) {
-            account = null;
-        }
-
-        if (!account) {
-            message.style.color = "red";
-            message.textContent = "Account not found. Please register first.";
-            return;
-        }
-
-        if (currentPassword !== account.password) {
-            message.style.color = "red";
-            message.textContent = "Your current password is incorrect.";
-            return;
-        }
-
-        if (!newPassword || !confirmNewPassword) {
-            message.style.color = "red";
+        if (!currentPassword || !newPassword || !confirmNewPassword) {
             message.textContent = "Please fill in all password fields.";
             return;
         }
 
-        if (newPassword.length < 6) {
-            message.style.color = "red";
-            message.textContent = "Your new password must be at least 6 characters.";
+        if (newPassword.length < 8) {
+            message.textContent =
+                "Your new password must be at least 8 characters long.";
             return;
         }
 
         if (newPassword !== confirmNewPassword) {
-            message.style.color = "red";
             message.textContent = "The new passwords do not match.";
             return;
         }
 
         if (newPassword === currentPassword) {
-            message.style.color = "red";
-            message.textContent = "New password and old password cannot match.";
+            message.textContent =
+                "Your new password must be different from your current password.";
             return;
         }
 
-        account.password = newPassword;
-        localStorage.setItem("zobacAccount", JSON.stringify(account));
+        savePasswordBtn.disabled = true;
+        savePasswordBtn.textContent = "Updating...";
 
-        message.style.color = "green";
-        message.textContent = "Password changed successfully!";
+        try {
+            const response = await apiFetch(
+                "/api/customer/change-password",
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        currentPassword: currentPassword,
+                        newPassword: newPassword
+                    })
+                }
+            );
 
-        document.getElementById("currentPassword").value = "";
-        document.getElementById("newPassword").value = "";
-        document.getElementById("confirmNewPassword").value = "";
-        setTimeout(function () {
-            window.location.href = "account.html";
-        }, 1500);
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result.message || "Could not change your password."
+                );
+            }
+
+            message.style.color = "green";
+            message.textContent = result.message;
+
+            document.getElementById("currentPassword").value = "";
+            document.getElementById("newPassword").value = "";
+            document.getElementById("confirmNewPassword").value = "";
+
+            setTimeout(function () {
+                window.location.href = "account.html";
+            }, 2000);
+
+        } catch (error) {
+            message.style.color = "red";
+            message.textContent =
+                error.message ||
+                "Something went wrong. Please try again.";
+
+        } finally {
+            savePasswordBtn.disabled = false;
+            savePasswordBtn.textContent = "Save Password";
+        }
     });
 });
 document.addEventListener("DOMContentLoaded", function () {

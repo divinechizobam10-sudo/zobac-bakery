@@ -446,7 +446,94 @@ app.patch("/api/customer/profile", (req, res) => {
         });
     }
 });
+// Change logged-in customer's password
+app.patch("/api/customer/change-password", async (req, res) => {
+    try {
+        if (
+            req.session?.customerAuthenticated !== true ||
+            !req.session.customerId
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Please log in to change your password."
+            });
+        }
 
+        const {
+            currentPassword,
+            newPassword
+        } = req.body;
+
+        if (
+            typeof currentPassword !== "string" ||
+            typeof newPassword !== "string"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Please complete all password fields."
+            });
+        }
+
+        if (
+            newPassword.length < 8 ||
+            newPassword.length > 72
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Your new password must be 8–72 characters long."
+            });
+        }
+
+        const customers = loadCustomers();
+
+        const customer = customers.find(
+            account => account.id === req.session.customerId
+        );
+
+        if (!customer) {
+            return res.status(404).json({
+                success: false,
+                message: "Customer account not found."
+            });
+        }
+
+        const passwordIsCorrect = await bcrypt.compare(
+            currentPassword,
+            customer.passwordHash
+        );
+
+        if (!passwordIsCorrect) {
+            return res.status(400).json({
+                success: false,
+                message: "Your current password is incorrect."
+            });
+        }
+
+        if (newPassword === currentPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Your new password must be different from your current password."
+            });
+        }
+
+        customer.passwordHash = await bcrypt.hash(newPassword, 12);
+
+        saveCustomers(customers);
+
+        return res.json({
+            success: true,
+            message: "Your password has been changed successfully."
+        });
+
+    } catch (error) {
+        console.error("Password change failed:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not change your password. Please try again."
+        });
+    }
+});
 // Customer logout
 app.post("/api/customer/logout", (req, res, next) => {
     req.session.destroy((error) => {
