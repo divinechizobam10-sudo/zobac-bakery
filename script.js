@@ -3002,10 +3002,7 @@ async function loadHomepageReviews() {
     if (!reviewsList) return;
 
     try {
-        const response = await fetch("/api/reviews", {
-            credentials: "same-origin"
-        });
-
+       const response = await apiFetch("/api/reviews");
         if (!response.ok) {
             throw new Error("Could not load reviews.");
         }
