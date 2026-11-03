@@ -1348,8 +1348,16 @@ const savedOrders = await loadOrdersFromDatabase();
             if (existing.inventoryDeducted === true) {
                 continue;
             }
-
+console.log("CHECKING RESERVED ORDER:", {
+    orderNumber: existing.orderNumber,
+    status: existing.status,
+    inventoryDeducted: existing.inventoryDeducted
+});
             for (const item of existing.items || []) {
+                  console.log("RESERVED PRODUCT:", {
+    product: item.name || item.productName,
+    quantity: item.quantity
+});
                 const stock = findInventoryProduct(item);
                 const quantity = Number(item.quantity);
 
@@ -1364,6 +1372,7 @@ const savedOrders = await loadOrdersFromDatabase();
                     );
                 }
             }
+          
         }
 
         // Combine duplicate products in the new order.
