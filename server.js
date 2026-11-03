@@ -1345,9 +1345,12 @@ const savedOrders = await loadOrdersFromDatabase();
         const reservedStock = new Map();
 
         for (const existing of savedOrders) {
-            if (existing.inventoryDeducted === true) {
-                continue;
-            }
+          if (
+    existing.inventoryDeducted === true ||
+    existing.status === "Cancelled"
+) {
+    continue;
+}
 console.log("CHECKING RESERVED ORDER:", {
     orderNumber: existing.orderNumber,
     status: existing.status,
@@ -1708,14 +1711,13 @@ const savedOrders = await loadOrdersFromDatabase();        res.json(savedOrders)
 app.patch("/api/orders/:orderNumber", requireAdmin, async (req, res) => {
     try {
         const { status, paymentStatus } = req.body;
-
-        const allowedStatuses = [
-            "Order Received",
-            "Preparing",
-            "Out for Delivery",
-            "Delivered"
-        ];
-
+const allowedStatuses = [
+    "Order Received",
+    "Preparing",
+    "Out for Delivery",
+    "Delivered",
+    "Cancelled"
+];
         const allowedPaymentStatuses = [
             "Payment Pending",
             "Payment Confirmed"

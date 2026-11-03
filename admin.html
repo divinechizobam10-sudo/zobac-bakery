@@ -437,7 +437,14 @@
                     <button type="button" id="refreshOrdersBtn">
                         Refresh Orders
                     </button>
-
+                    <select id="statusFilter" aria-label="Filter orders by status">
+    <option value="">All Orders</option>
+    <option value="Order Received">Order Received</option>
+    <option value="Preparing">Preparing</option>
+    <option value="Out for Delivery">Out for Delivery</option>
+    <option value="Delivered">Delivered</option>
+    <option value="Cancelled">Cancelled</option>
+</select>
                 </div>
 
                 <p id="ordersMessage" class="admin-message" aria-live="polite"></p>

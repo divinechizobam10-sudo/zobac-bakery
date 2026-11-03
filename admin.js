@@ -424,12 +424,13 @@ ordersMessage.textContent =
         const statusCell = document.createElement("td");
         const statusSelect = document.createElement("select");
 
-        [
-            "Order Received",
-            "Preparing",
-            "Out for Delivery",
-            "Delivered"
-        ].forEach(status => {
+       [
+    "Order Received",
+    "Preparing",
+    "Out for Delivery",
+    "Delivered",
+    "Cancelled"
+].forEach(status => {
             const option = document.createElement("option");
             option.value = status;
             option.textContent = status;
@@ -1145,41 +1146,47 @@ async function loadAdminInventory() {
                 statusClass = "low-stock";
             }
 
-            return `
-                <tr>
-                    <td>${escapeInventoryText(item.name)}</td>
-                    <td>${escapeInventoryText(item.category || "Other")}</td>
-                    <td>${item.quantity}</td>
-                    <td>
-                        <span class="inventory-status ${statusClass}">
-                            ${stockStatus}
-                   <td>
-    <button
-        type="button"
-        class="restock-inventory-btn"
-        data-inventory-id="${escapeInventoryText(item.id)}"
-    >
-        Restock
-    </button>
+          return `
+    <tr>
+        <td>${escapeInventoryText(item.name)}</td>
+        <td>${escapeInventoryText(item.category || "Other")}</td>
+        <td>${item.quantity}</td>
 
-    <button
-        type="button"
-        class="edit-inventory-btn"
-        data-inventory-id="${escapeInventoryText(item.id)}"
-    >
-        Edit
-    </button>
+        <td>
+            <span class="inventory-status ${statusClass}">
+                ${stockStatus}
+            </span>
+        </td>
 
-    <button
-        type="button"
-        class="delete-inventory-btn"
-        data-inventory-id="${escapeInventoryText(item.id)}"
-    >
-        Delete
-    </button>
-</td>
-                </tr>
-            `;
+        <td>${escapeInventoryText(item.lowStockThreshold)}</td>
+
+        <td>
+            <button
+                type="button"
+                class="restock-inventory-btn"
+                data-inventory-id="${escapeInventoryText(item.id)}"
+            >
+                Restock
+            </button>
+
+            <button
+                type="button"
+                class="edit-inventory-btn"
+                data-inventory-id="${escapeInventoryText(item.id)}"
+            >
+                Edit
+            </button>
+
+            <button
+                type="button"
+                class="delete-inventory-btn"
+                data-inventory-id="${escapeInventoryText(item.id)}"
+            >
+                Delete
+            </button>
+        </td>
+    </tr>
+`;
         }).join("");
 
         tableMessage.textContent = "";
