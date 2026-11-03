@@ -2045,7 +2045,112 @@ app.patch(
         }
     }
 );
+// Edit an existing inventory item
+app.patch("/api/admin/inventory/:id", requireAdmin, (req, res) => {
+    try {
+        const { name, category, quantity, lowStockThreshold } = req.body;
 
+        if (typeof name !== "string" || !name.trim()) {
+            return res.status(400).json({
+                message: "Product name is required."
+            });
+        }
+
+        if (!Number.isSafeInteger(quantity) || quantity < 0) {
+            return res.status(400).json({
+                message: "Quantity must be a whole number of 0 or more."
+            });
+        }
+
+        if (
+            !Number.isSafeInteger(lowStockThreshold) ||
+            lowStockThreshold < 0
+        ) {
+            return res.status(400).json({
+                message: "Low-stock threshold must be a whole number of 0 or more."
+            });
+        }
+
+        const inventory = loadInventory();
+
+        const item = inventory.find(
+            product => product.id === req.params.id
+        );
+
+        if (!item) {
+            return res.status(404).json({
+                message: "Inventory item not found."
+            });
+        }
+
+        const duplicate = inventory.some(product =>
+            product.id !== item.id &&
+            product.name.toLowerCase() === name.trim().toLowerCase()
+        );
+
+        if (duplicate) {
+            return res.status(409).json({
+                message: "Another inventory item already uses this name."
+            });
+        }
+
+        item.name = name.trim();
+        item.category = typeof category === "string" && category.trim()
+            ? category.trim()
+            : "Other";
+        item.quantity = quantity;
+        item.lowStockThreshold = lowStockThreshold;
+        item.updatedAt = new Date().toISOString();
+
+        saveInventory(inventory);
+
+        return res.json({
+            message: "Inventory item updated successfully.",
+            item
+        });
+
+    } catch (error) {
+        console.error("Error updating inventory item:", error.message);
+
+        return res.status(500).json({
+            message: "Could not update inventory item."
+        });
+    }
+});
+
+
+// Delete an inventory item
+app.delete("/api/admin/inventory/:id", requireAdmin, (req, res) => {
+    try {
+        const inventory = loadInventory();
+
+        const itemIndex = inventory.findIndex(
+            product => product.id === req.params.id
+        );
+
+        if (itemIndex === -1) {
+            return res.status(404).json({
+                message: "Inventory item not found."
+            });
+        }
+
+        const deletedItem = inventory[itemIndex];
+
+        inventory.splice(itemIndex, 1);
+        saveInventory(inventory);
+
+        return res.json({
+            message: `${deletedItem.name} deleted from inventory successfully.`
+        });
+
+    } catch (error) {
+        console.error("Error deleting inventory item:", error.message);
+
+        return res.status(500).json({
+            message: "Could not delete inventory item."
+        });
+    }
+});
 /* ===== START SERVER AFTER DATABASE CHECK ===== */
 
 async function startServer() {

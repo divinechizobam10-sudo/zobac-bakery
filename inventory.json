@@ -80,30 +80,7 @@
     "lowStockThreshold": 5,
     "updatedAt": "2026-10-17T00:00:00.000Z"
   },
-  {
-    "id": "stock_cookies",
-    "name": "Cookies",
-    "category": "Snacks",
-    "quantity": 0,
-    "lowStockThreshold": 5,
-    "updatedAt": "2026-10-17T00:00:00.000Z"
-  },
-  {
-    "id": "stock_pizza",
-    "name": "Pizza",
-    "category": "Pizza",
-    "quantity": 0,
-    "lowStockThreshold": 2,
-    "updatedAt": "2026-10-17T00:00:00.000Z"
-  },
-  {
-    "id": "stock_shawarma",
-    "name": "Sharwama",
-    "category": "Shawarma",
-    "quantity": 0,
-    "lowStockThreshold": 2,
-    "updatedAt": "2026-10-17T00:00:00.000Z"
-  },
+ 
   {
     "id": "stock_plantain_chips",
     "name": "Plantain Chips",

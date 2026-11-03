@@ -1105,6 +1105,7 @@ async function loadAdminInventory() {
         }
 
         const inventory = await response.json();
+        adminInventoryItems = inventory;
 
         // Update inventory summary cards
         document.getElementById("inventoryTotalProducts").textContent =
@@ -1152,18 +1153,31 @@ async function loadAdminInventory() {
                     <td>
                         <span class="inventory-status ${statusClass}">
                             ${stockStatus}
-                        </span>
-                    </td>
-                    <td>${item.lowStockThreshold}</td>
-                    <td>
-                        <button
-                            type="button"
-                            class="restock-inventory-btn"
-                            data-inventory-id="${escapeInventoryText(item.id)}"
-                        >
-                            Restock
-                        </button>
-                    </td>
+                   <td>
+    <button
+        type="button"
+        class="restock-inventory-btn"
+        data-inventory-id="${escapeInventoryText(item.id)}"
+    >
+        Restock
+    </button>
+
+    <button
+        type="button"
+        class="edit-inventory-btn"
+        data-inventory-id="${escapeInventoryText(item.id)}"
+    >
+        Edit
+    </button>
+
+    <button
+        type="button"
+        class="delete-inventory-btn"
+        data-inventory-id="${escapeInventoryText(item.id)}"
+    >
+        Delete
+    </button>
+</td>
                 </tr>
             `;
         }).join("");
@@ -1262,70 +1276,191 @@ if (inventoryForm) {
     });
 }
 
-// Restock an existing product
+// Inventory actions: Restock, Edit and Delete
 const inventoryTable = document.getElementById("inventoryTable");
 
 if (inventoryTable) {
     inventoryTable.addEventListener("click", async function(event) {
-        const button = event.target.closest(".restock-inventory-btn");
+        const button = event.target.closest(
+            ".restock-inventory-btn, .edit-inventory-btn, .delete-inventory-btn"
+        );
 
         if (!button) return;
 
         const itemId = button.dataset.inventoryId;
-        const amountText = prompt(
-            "How many units are you adding to the existing stock?"
+
+        const item = adminInventoryItems.find(
+            product => String(product.id) === String(itemId)
         );
 
-        if (amountText === null) return;
-
-        const amount = Number(amountText);
-
-        if (
-            amountText.trim() === "" ||
-            !Number.isSafeInteger(amount) ||
-            amount <= 0
-        ) {
-            alert("Please enter a whole number greater than zero.");
+        if (!item) {
+            alert("Inventory item not found. Please refresh the inventory.");
             return;
         }
 
-        button.disabled = true;
+        // RESTOCK
+        if (button.classList.contains("restock-inventory-btn")) {
+            const amountText = prompt(
+                "How many units are you adding to the existing stock?"
+            );
 
-        try {
-           const response = await apiFetch(
-    `/api/admin/inventory/${encodeURIComponent(itemId)}/restock`,
-    {
-        method: "PATCH",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ amount })
-    }
-);
-           const responseText = await response.text();
-let result = {};
+            if (amountText === null) return;
 
-if (responseText) {
-    try {
-        result = JSON.parse(responseText);
-    } catch {
-        throw new Error("The server returned an invalid response.");
-    }
-}
+            const amount = Number(amountText);
 
-            if (!response.ok) {
-                throw new Error(
-                    result.message || "Could not restock this product."
-                );
+            if (
+                amountText.trim() === "" ||
+                !Number.isSafeInteger(amount) ||
+                amount <= 0
+            ) {
+                alert("Please enter a whole number greater than zero.");
+                return;
             }
 
-            alert(result.message);
-            await loadAdminInventory();
+            button.disabled = true;
 
-        } catch (error) {
-            alert(error.message);
-        } finally {
-            button.disabled = false;
+            try {
+                const response = await apiFetch(
+                    `/api/admin/inventory/${encodeURIComponent(itemId)}/restock`,
+                    {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ amount })
+                    }
+                );
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Could not restock this product.");
+                }
+
+                alert(result.message);
+                await loadAdminInventory();
+
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                button.disabled = false;
+            }
+
+            return;
+        }
+
+        // EDIT
+        if (button.classList.contains("edit-inventory-btn")) {
+            const name = prompt("Enter the product name:", item.name);
+            if (name === null) return;
+
+            const category = prompt(
+                "Enter the product category:",
+                item.category || ""
+            );
+            if (category === null) return;
+
+            const quantityText = prompt(
+                "Enter the current quantity:",
+                item.quantity
+            );
+            if (quantityText === null) return;
+
+            const thresholdText = prompt(
+                "Enter the low-stock threshold:",
+                item.lowStockThreshold
+            );
+            if (thresholdText === null) return;
+
+            const quantity = Number(quantityText);
+            const lowStockThreshold = Number(thresholdText);
+
+            if (!name.trim() || !category.trim()) {
+                alert("Product name and category cannot be empty.");
+                return;
+            }
+
+            if (
+                quantityText.trim() === "" ||
+                !Number.isSafeInteger(quantity) ||
+                quantity < 0 ||
+                thresholdText.trim() === "" ||
+                !Number.isSafeInteger(lowStockThreshold) ||
+                lowStockThreshold < 0
+            ) {
+                alert("Quantity and low-stock threshold must be whole numbers of zero or more.");
+                return;
+            }
+
+            button.disabled = true;
+
+            try {
+                const response = await apiFetch(
+                    `/api/admin/inventory/${encodeURIComponent(itemId)}`,
+                    {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            name: name.trim(),
+                            category: category.trim(),
+                            quantity,
+                            lowStockThreshold
+                        })
+                    }
+                );
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Could not update this product.");
+                }
+
+                alert(result.message || "Inventory item updated successfully.");
+                await loadAdminInventory();
+
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                button.disabled = false;
+            }
+
+            return;
+        }
+
+        // DELETE
+        if (button.classList.contains("delete-inventory-btn")) {
+            const confirmed = confirm(
+                `Are you sure you want to delete "${item.name}" from inventory?`
+            );
+
+            if (!confirmed) return;
+
+            button.disabled = true;
+
+            try {
+                const response = await apiFetch(
+                    `/api/admin/inventory/${encodeURIComponent(itemId)}`,
+                    {
+                        method: "DELETE"
+                    }
+                );
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || "Could not delete this product.");
+                }
+
+                alert(result.message || "Inventory item deleted successfully.");
+                await loadAdminInventory();
+
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                button.disabled = false;
+            }
         }
     });
 }
