@@ -939,6 +939,153 @@ if (refreshReviewsBtn) {
     refreshReviewsBtn.addEventListener("click", loadAdminReviews);
 }
 
+// =====================================
+// REGISTERED CUSTOMERS
+// =====================================
+
+const toggleCustomersBtn = document.getElementById("toggleCustomersBtn");
+const adminCustomersContent = document.getElementById("adminCustomersContent");
+const adminCustomersTable = document.getElementById("adminCustomersTable");
+const adminCustomersMessage = document.getElementById("adminCustomersMessage");
+const totalRegisteredCustomers = document.getElementById("totalRegisteredCustomers");
+const customerSearch = document.getElementById("customerSearch");
+const refreshCustomersBtn = document.getElementById("refreshCustomersBtn");
+
+let registeredCustomers = [];
+
+// Show or hide registered customers
+if (toggleCustomersBtn && adminCustomersContent) {
+    toggleCustomersBtn.addEventListener("click", async () => {
+        const isOpening = adminCustomersContent.hidden;
+
+        adminCustomersContent.hidden = !isOpening;
+
+        toggleCustomersBtn.setAttribute(
+            "aria-expanded",
+            String(isOpening)
+        );
+
+        toggleCustomersBtn.textContent = isOpening
+            ? "Hide Registered Customers"
+            : "Show Registered Customers";
+
+        if (isOpening) {
+            await loadAdminCustomers();
+        }
+    });
+}
+
+// Load registered customers from the backend
+async function loadAdminCustomers() {
+    if (!adminCustomersTable || !adminCustomersMessage) {
+        console.error("Registered customers HTML elements were not found.");
+        return;
+    }
+
+    adminCustomersMessage.textContent = "Loading customers...";
+    adminCustomersTable.replaceChildren();
+
+    try {
+        const response = await apiFetch("/api/admin/customers");
+        const customers = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                customers.message || "Could not load registered customers."
+            );
+        }
+
+        if (!Array.isArray(customers)) {
+            throw new Error("The server returned an invalid customer list.");
+        }
+
+        registeredCustomers = customers;
+
+        if (totalRegisteredCustomers) {
+            totalRegisteredCustomers.textContent = customers.length;
+        }
+
+        displayRegisteredCustomers();
+
+    } catch (error) {
+        console.error("Error loading registered customers:", error);
+
+        adminCustomersMessage.textContent = error.message;
+    }
+}
+
+// Display customers and apply the search filter
+function displayRegisteredCustomers() {
+    if (!adminCustomersTable || !adminCustomersMessage) return;
+
+    adminCustomersTable.replaceChildren();
+
+    const searchTerm = customerSearch
+        ? customerSearch.value.trim().toLowerCase()
+        : "";
+
+    const filteredCustomers = registeredCustomers.filter(customer => {
+        const name = String(customer.name || "").toLowerCase();
+        const email = String(customer.email || "").toLowerCase();
+
+        return name.includes(searchTerm) || email.includes(searchTerm);
+    });
+
+    if (filteredCustomers.length === 0) {
+        adminCustomersMessage.textContent = registeredCustomers.length === 0
+            ? "No registered customers yet."
+            : "No customers match your search.";
+
+        return;
+    }
+
+    adminCustomersMessage.textContent =
+        `${filteredCustomers.length} customer(s) found.`;
+
+    filteredCustomers.forEach(customer => {
+        const row = document.createElement("tr");
+
+        const nameCell = document.createElement("td");
+        nameCell.textContent = customer.name || "—";
+
+        const emailCell = document.createElement("td");
+        emailCell.textContent = customer.email || "—";
+
+        const phoneCell = document.createElement("td");
+        phoneCell.textContent = customer.phone || "—";
+
+        const dateCell = document.createElement("td");
+
+        if (customer.createdAt) {
+            const date = new Date(customer.createdAt);
+
+            dateCell.textContent = Number.isNaN(date.getTime())
+                ? "—"
+                : date.toLocaleDateString("en-NG");
+        } else {
+            dateCell.textContent = "—";
+        }
+
+        row.append(
+            nameCell,
+            emailCell,
+            phoneCell,
+            dateCell
+        );
+
+        adminCustomersTable.appendChild(row);
+    });
+}
+
+// Search customers
+if (customerSearch) {
+    customerSearch.addEventListener("input", displayRegisteredCustomers);
+}
+
+// Refresh customers manually
+if (refreshCustomersBtn) {
+    refreshCustomersBtn.addEventListener("click", loadAdminCustomers);
+}
 
  // =====================================
 // INVENTORY MANAGEMENT
@@ -1221,6 +1368,7 @@ async function checkAdminSession() {
            await loadOrders();
 await loadAdminInventory();
 await loadAdminReviews();
+await loadAdminCustomers();
 
         } else {
             // Logged out: show Admin Login only.

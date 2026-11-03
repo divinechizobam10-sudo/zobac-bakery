@@ -1005,7 +1005,28 @@ app.patch("/api/admin/reviews/:id", requireAdmin, (req, res) => {
         });
     }
 });
+// Admin: view all registered customers
+app.get("/api/admin/customers", requireAdmin, (req, res) => {
+    try {
+        const customers = loadCustomers();
 
+        res.json(customers.map(customer => ({
+            id: customer.id,
+            name: customer.name,
+            email: customer.email,
+            phone: customer.phone,
+            createdAt: customer.createdAt
+        })));
+
+    } catch (error) {
+        console.error("Error loading registered customers:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Could not load registered customers."
+        });
+    }
+});
 // Admin login
 app.post("/api/admin/login", (req, res, next) => {
     const { username, password } = req.body;
