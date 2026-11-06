@@ -1345,9 +1345,10 @@ const savedOrders = await loadOrdersFromDatabase();
         const reservedStock = new Map();
 
         for (const existing of savedOrders) {
-          if (
+   if (
     existing.inventoryDeducted === true ||
-    existing.status === "Cancelled"
+    existing.status === "Cancelled" ||
+    existing.status === "Delivered"
 ) {
     continue;
 }
