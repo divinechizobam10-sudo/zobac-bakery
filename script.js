@@ -1,11 +1,18 @@
 
-const API_BASE_URL = "https://zobac-bakery-8kqp.onrender.com";
+const API_BASE_URL = (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+)
+    ? "http://localhost:3000"
+    : "https://zobac-bakery-8kqp.onrender.com";
+
 function apiFetch(path, options = {}) {
     return fetch(`${API_BASE_URL}${path}`, {
         ...options,
         credentials: "include"
     });
 }
+
 
 
 
@@ -2118,19 +2125,36 @@ document.addEventListener("DOMContentLoaded", function () {
 ================================ */
 
 document.addEventListener("DOMContentLoaded", async function () {
+
     const accountName = document.getElementById("accountName");
     const accountPhone = document.getElementById("accountPhone");
     const savedName = document.getElementById("savedName");
     const savedPhone = document.getElementById("savedPhone");
+
+    const editAccountBtn = document.getElementById("editAccountBtn");
     const saveAccountBtn = document.getElementById("saveAccountBtn");
 
     // Only run on account.html
-    if (!accountName || !accountPhone || !savedName || !savedPhone) {
+    if (
+        !accountName ||
+        !accountPhone ||
+        !savedName ||
+        !savedPhone ||
+        !editAccountBtn ||
+        !saveAccountBtn
+    ) {
         return;
     }
 
+    // Initial account display
+    accountName.readOnly = true;
+    accountPhone.readOnly = true;
+
+    saveAccountBtn.style.display = "none";
+    editAccountBtn.style.display = "inline-block";
+
     try {
-        // Check the existing customer session.
+        // Load customer details from PostgreSQL through the session.
         const response = await apiFetch("/api/customer/session");
         const result = await response.json();
 
@@ -2150,198 +2174,79 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     } catch (error) {
         console.error("Could not load account details:", error);
+
         savedName.textContent = "Could not load details";
         savedPhone.textContent = "Could not load details";
         return;
     }
 
-    // Save account details to the backend.
-    if (saveAccountBtn) {
-        saveAccountBtn.addEventListener("click", async function (event) {
-            event.preventDefault();
+    // EDIT BUTTON
+    editAccountBtn.addEventListener("click", function () {
 
-            const name = accountName.value.trim();
-            const phone = accountPhone.value.trim();
+        accountName.readOnly = false;
+        accountPhone.readOnly = false;
 
-            if (!name) {
-                alert("Please enter your name.");
-                return;
-            }
-
-            saveAccountBtn.disabled = true;
-            saveAccountBtn.textContent = "Saving...";
-
-            try {
-                const response = await apiFetch("/api/customer/profile", {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ name, phone })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(
-                        result.message || "Could not save account details."
-                    );
-                }
-
-                accountName.value = result.customer.name || "";
-                accountPhone.value = result.customer.phone || "";
-
-                savedName.textContent = result.customer.name || "";
-                savedPhone.textContent = result.customer.phone || "";
-
-                alert("Account details saved successfully!");
-
-            } catch (error) {
-                console.error("Account save failed:", error);
-                alert(error.message || "Could not save account details.");
-            } finally {
-                saveAccountBtn.disabled = false;
-                saveAccountBtn.textContent = "Save";
-            }
-        });
-    }
-});
-
-
-
-// ===============================
-// EDIT ACCOUNT INFORMATION
-// ===============================
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    const editBtn =
-        document.getElementById("editAccountBtn");
-
-    const saveBtn =
-        document.getElementById("saveAccountBtn");
-
-    const nameInput =
-        document.getElementById("accountName");
-
-    const phoneInput =
-        document.getElementById("accountPhone");
-
-
-    if (
-        !editBtn ||
-        !saveBtn ||
-        !nameInput ||
-        !phoneInput
-    ) {
-        return;
-    }
-
-
-    nameInput.readOnly = true;
-    phoneInput.readOnly = true;
-
-    saveBtn.style.display = "none";
-
-
-    // EDIT
-    editBtn.addEventListener("click", function () {
-
-        nameInput.readOnly = false;
-        phoneInput.readOnly = false;
-
-        editBtn.style.display = "none";
-        saveBtn.style.display = "inline-block";
+        editAccountBtn.style.display = "none";
+        saveAccountBtn.style.display = "inline-block";
 
     });
 
+    // SAVE BUTTON - PostgreSQL
+    saveAccountBtn.addEventListener("click", async function (event) {
 
-    // SAVE
-    saveBtn.addEventListener("click", function () {
+        event.preventDefault();
 
-        const currentEmail =
-            getCurrentEmail();
+        const name = accountName.value.trim();
+        const phone = accountPhone.value.trim();
 
-        if (!currentEmail) {
-
-            showNotification(
-                "Please login first."
-            );
-
+        if (!name || !phone) {
+            showNotification("Please enter your name and phone number.");
             return;
         }
 
+        saveAccountBtn.disabled = true;
+        saveAccountBtn.textContent = "Saving...";
 
-        const accounts =
-            getZobacAccounts();
-
-
-        const accountIndex =
-            accounts.findIndex(function (account) {
-
-                return (
-                    (account.email || "").toLowerCase() ===
-                    currentEmail
-                );
-
+        try {
+            const response = await apiFetch("/api/customer/profile", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name, phone })
             });
 
+            const result = await response.json();
 
-        if (accountIndex === -1) {
+            if (!response.ok) {
+                throw new Error(
+                    result.message || "Could not save account details."
+                );
+            }
 
-            showNotification(
-                "Account not found."
-            );
+            accountName.value = result.customer.name || "";
+            accountPhone.value = result.customer.phone || "";
 
-            return;
+            savedName.textContent = result.customer.name || "";
+            savedPhone.textContent = result.customer.phone || "";
+
+            // Return to normal account display
+            accountName.readOnly = true;
+            accountPhone.readOnly = true;
+
+            saveAccountBtn.style.display = "none";
+            editAccountBtn.style.display = "inline-block";
+
+            showNotification("Account details saved successfully!");
+
+        } catch (error) {
+            console.error("Account save failed:", error);
+            showNotification(error.message || "Could not save account details.");
+
+        } finally {
+            saveAccountBtn.disabled = false;
+            saveAccountBtn.textContent = "Save";
         }
-
-
-        const newName =
-            nameInput.value.trim();
-
-        const newPhone =
-            phoneInput.value.trim();
-
-
-        if (!newName || !newPhone) {
-
-            showNotification(
-                "Please enter your name and phone number."
-            );
-
-            return;
-        }
-
-
-        // Update ONLY this customer's account
-        accounts[accountIndex].name =
-            newName;
-
-        accounts[accountIndex].phone =
-            newPhone;
-
-
-        saveZobacAccounts(accounts);
-
-
-        savedName.textContent =
-            newName;
-
-        savedPhone.textContent =
-            newPhone;
-
-
-        nameInput.readOnly = true;
-        phoneInput.readOnly = true;
-
-        saveBtn.style.display = "none";
-        editBtn.style.display = "inline-block";
-
-
-        showNotification(
-            "Your information has been saved! 👤"
-        );
 
     });
 

@@ -1,0 +1,10 @@
+
+.env
+.env.*
+!.env.example
+
+customers.json
+customers backup.json
+
+node_modules/
+.DS_Store

@@ -101,7 +101,6 @@ app.use(session({
 
 
 const ORDERS_FILE = path.join(__dirname, "orders.json");
-const CUSTOMERS_FILE = path.join(__dirname, "customers.json");
 const REVIEWS_FILE = path.join(__dirname, "reviews.json");
 const INVENTORY_FILE = path.join(__dirname, "inventory.json");
 
@@ -186,28 +185,58 @@ async function updateOrderInDatabase(order) {
     }
 }
 
-// Load registered customers.
-function loadCustomers() {
-    try {
-        if (!fs.existsSync(CUSTOMERS_FILE)) {
-            return [];
-        }
 
-        const data = fs.readFileSync(CUSTOMERS_FILE, "utf8");
-        return JSON.parse(data);
-    } catch (error) {
-        console.error("Could not load customers:", error.message);
-        throw error;
-    }
+
+// =====================================
+// CUSTOMER ACCOUNTS - POSTGRESQL
+// =====================================
+
+function formatCustomer(row) {
+    if (!row) return null;
+
+    return {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        phone: row.phone || "",
+        passwordHash: row.password_hash,
+        createdAt: new Date(row.created_at).toISOString()
+    };
 }
 
-// Save registered customers.
-function saveCustomers(customers) {
-    fs.writeFileSync(
-        CUSTOMERS_FILE,
-        JSON.stringify(customers, null, 2),
-        "utf8"
+// Find a customer using their ID.
+async function getCustomerById(id) {
+    const result = await pool.query(
+        `SELECT id, name, email, phone, password_hash, created_at
+         FROM zobac_customers
+         WHERE id = $1`,
+        [id]
     );
+
+    return formatCustomer(result.rows[0]);
+}
+
+// Find a customer using their email.
+async function getCustomerByEmail(email) {
+    const result = await pool.query(
+        `SELECT id, name, email, phone, password_hash, created_at
+         FROM zobac_customers
+         WHERE email = $1`,
+        [email]
+    );
+
+    return formatCustomer(result.rows[0]);
+}
+
+// Get all registered customers.
+async function getAllCustomers() {
+    const result = await pool.query(
+        `SELECT id, name, email, phone, password_hash, created_at
+         FROM zobac_customers
+         ORDER BY created_at DESC`
+    );
+
+    return result.rows.map(formatCustomer);
 }
 
 function loadReviews() {
@@ -326,7 +355,8 @@ function getTrustedPrice(item) {
 app.use(express.json());
 
  // Check whether a customer is logged in
-app.get("/api/customer/session", (req, res) => {
+
+app.get("/api/customer/session", async (req, res) => {
     if (
         req.session?.customerAuthenticated !== true ||
         !req.session.customerId
@@ -337,10 +367,8 @@ app.get("/api/customer/session", (req, res) => {
     }
 
     try {
-        const customers = loadCustomers();
-
-        const customer = customers.find(
-            account => account.id === req.session.customerId
+        const customer = await getCustomerById(
+            req.session.customerId
         );
 
         if (!customer) {
@@ -371,8 +399,10 @@ app.get("/api/customer/session", (req, res) => {
     }
 });
 
+
  // Update the logged-in customer's account details
-app.patch("/api/customer/profile", (req, res) => {
+
+app.patch("/api/customer/profile", async (req, res) => {
     if (
         req.session?.customerAuthenticated !== true ||
         !req.session.customerId
@@ -410,11 +440,19 @@ app.patch("/api/customer/profile", (req, res) => {
             });
         }
 
-        const customers = loadCustomers();
-
-        const customer = customers.find(
-            account => account.id === req.session.customerId
+        const result = await pool.query(
+            `UPDATE zobac_customers
+             SET name = $2, phone = $3
+             WHERE id = $1
+             RETURNING id, name, email, phone, password_hash, created_at`,
+            [
+                req.session.customerId,
+                cleanName,
+                cleanPhone
+            ]
         );
+
+        const customer = formatCustomer(result.rows[0]);
 
         if (!customer) {
             return res.status(404).json({
@@ -422,11 +460,6 @@ app.patch("/api/customer/profile", (req, res) => {
                 message: "Customer account not found."
             });
         }
-
-        customer.name = cleanName;
-        customer.phone = cleanPhone;
-
-        saveCustomers(customers);
 
         return res.json({
             success: true,
@@ -437,6 +470,7 @@ app.patch("/api/customer/profile", (req, res) => {
                 phone: customer.phone
             }
         });
+
     } catch (error) {
         console.error("Account update failed:", error.message);
 
@@ -446,6 +480,8 @@ app.patch("/api/customer/profile", (req, res) => {
         });
     }
 });
+
+
 // Change logged-in customer's password
 app.patch("/api/customer/change-password", async (req, res) => {
     try {
@@ -484,10 +520,9 @@ app.patch("/api/customer/change-password", async (req, res) => {
             });
         }
 
-        const customers = loadCustomers();
-
-        const customer = customers.find(
-            account => account.id === req.session.customerId
+        // Get customer from PostgreSQL
+        const customer = await getCustomerById(
+            req.session.customerId
         );
 
         if (!customer) {
@@ -497,6 +532,7 @@ app.patch("/api/customer/change-password", async (req, res) => {
             });
         }
 
+        // Verify current password
         const passwordIsCorrect = await bcrypt.compare(
             currentPassword,
             customer.passwordHash
@@ -516,9 +552,21 @@ app.patch("/api/customer/change-password", async (req, res) => {
             });
         }
 
-        customer.passwordHash = await bcrypt.hash(newPassword, 12);
+        // Hash and save new password in PostgreSQL
+        const newPasswordHash = await bcrypt.hash(
+            newPassword,
+            12
+        );
 
-        saveCustomers(customers);
+        await pool.query(
+            `UPDATE zobac_customers
+             SET password_hash = $2
+             WHERE id = $1`,
+            [
+                customer.id,
+                newPasswordHash
+            ]
+        );
 
         return res.json({
             success: true,
@@ -534,6 +582,7 @@ app.patch("/api/customer/change-password", async (req, res) => {
         });
     }
 });
+
 // Customer logout
 app.post("/api/customer/logout", (req, res, next) => {
     req.session.destroy((error) => {
@@ -558,7 +607,7 @@ app.post("/api/customer/logout", (req, res, next) => {
     
 
 
-// Customer registration
+
 app.post("/api/register", async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
@@ -611,13 +660,8 @@ app.post("/api/register", async (req, res) => {
             });
         }
 
-
-
-        const customers = loadCustomers();
-
-        const existingCustomer = customers.find(
-            customer => customer.email === cleanEmail
-        );
+        // Check PostgreSQL for an existing account.
+        const existingCustomer = await getCustomerByEmail(cleanEmail);
 
         if (existingCustomer) {
             return res.status(409).json({
@@ -637,8 +681,20 @@ app.post("/api/register", async (req, res) => {
             createdAt: new Date().toISOString()
         };
 
-        customers.push(customer);
-        saveCustomers(customers);
+        // Save the new customer permanently in PostgreSQL.
+        await pool.query(
+            `INSERT INTO zobac_customers
+             (id, name, email, phone, password_hash, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+                customer.id,
+                customer.name,
+                customer.email,
+                customer.phone,
+                customer.passwordHash,
+                customer.createdAt
+            ]
+        );
 
         return res.status(201).json({
             success: true,
@@ -646,6 +702,13 @@ app.post("/api/register", async (req, res) => {
         });
 
     } catch (error) {
+        if (error.code === "23505") {
+            return res.status(409).json({
+                success: false,
+                message: "An account with this email already exists."
+            });
+        }
+
         console.error("Customer registration failed:", error.message);
 
         return res.status(500).json({
@@ -654,9 +717,9 @@ app.post("/api/register", async (req, res) => {
         });
     }
 });
-// Customer login
+
+
 app.post("/api/login", async (req, res, next) => {
-    
     try {
         const { email, password } = req.body;
 
@@ -672,11 +735,8 @@ app.post("/api/login", async (req, res, next) => {
 
         const cleanEmail = email.trim().toLowerCase();
 
-        const customers = loadCustomers();
-
-        const customer = customers.find(
-            account => account.email === cleanEmail
-        );
+        // Find customer in PostgreSQL.
+        const customer = await getCustomerByEmail(cleanEmail);
 
         if (
             !customer ||
@@ -719,6 +779,8 @@ app.post("/api/login", async (req, res, next) => {
         });
     }
 });
+
+
 function requireAdmin(req, res, next) {
     if (req.session && req.session.adminAuthenticated === true) {
         return next();
@@ -756,11 +818,13 @@ app.get("/api/reviews", (req, res) => {
 });
 
 
+
 // Get the logged-in customer's delivered orders that can be reviewed
 app.get("/api/customer/reviewable-orders", async (req, res) => {
     if (
         !req.session ||
-        req.session.customerAuthenticated !== true
+        req.session.customerAuthenticated !== true ||
+        !req.session.customerId
     ) {
         return res.status(401).json({
             message: "Please log in to review an order."
@@ -768,13 +832,13 @@ app.get("/api/customer/reviewable-orders", async (req, res) => {
     }
 
     try {
-        const customers = loadCustomers();
-       const orders = await loadOrdersFromDatabase();
-        const reviews = loadReviews();
-
-        const customer = customers.find(
-            item => item.id === req.session.customerId
+        // Get customer from PostgreSQL.
+        const customer = await getCustomerById(
+            req.session.customerId
         );
+
+        const orders = await loadOrdersFromDatabase();
+        const reviews = loadReviews();
 
         if (!customer) {
             return res.status(404).json({
@@ -803,25 +867,29 @@ app.get("/api/customer/reviewable-orders", async (req, res) => {
             );
         });
 
-        res.json(customerOrders.map(order => ({
+        return res.json(customerOrders.map(order => ({
             orderNumber: order.orderNumber,
             items: order.items,
             createdAt: order.createdAt
         })));
+
     } catch (error) {
         console.error("Error finding reviewable orders:", error);
-        res.status(500).json({
+
+        return res.status(500).json({
             message: "Could not load reviewable orders."
         });
     }
 });
 
 
+
 // Submit a review for a delivered order
 app.post("/api/reviews", async (req, res) => {
     if (
         !req.session ||
-        req.session.customerAuthenticated !== true
+        req.session.customerAuthenticated !== true ||
+        !req.session.customerId
     ) {
         return res.status(401).json({
             message: "Please log in before submitting a review."
@@ -861,13 +929,13 @@ app.post("/api/reviews", async (req, res) => {
             });
         }
 
-        const customers = loadCustomers();
-    const orders = await loadOrdersFromDatabase();
-        const reviews = loadReviews();
-
-        const customer = customers.find(
-            item => item.id === req.session.customerId
+        // Get customer from PostgreSQL.
+        const customer = await getCustomerById(
+            req.session.customerId
         );
+
+        const orders = await loadOrdersFromDatabase();
+        const reviews = loadReviews();
 
         if (!customer) {
             return res.status(404).json({
@@ -932,13 +1000,15 @@ app.post("/api/reviews", async (req, res) => {
         reviews.push(review);
         saveReviews(reviews);
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Review submitted successfully. It is awaiting approval."
         });
+
     } catch (error) {
         console.error("Error submitting review:", error);
-        res.status(500).json({
+
+        return res.status(500).json({
             message: "Could not submit your review."
         });
     }
@@ -1005,12 +1075,14 @@ app.patch("/api/admin/reviews/:id", requireAdmin, (req, res) => {
         });
     }
 });
-// Admin: view all registered customers
-app.get("/api/admin/customers", requireAdmin, (req, res) => {
-    try {
-        const customers = loadCustomers();
 
-        res.json(customers.map(customer => ({
+// Admin: view all registered customers
+app.get("/api/admin/customers", requireAdmin, async (req, res) => {
+    try {
+        // Get all customers from PostgreSQL.
+        const customers = await getAllCustomers();
+
+        return res.json(customers.map(customer => ({
             id: customer.id,
             name: customer.name,
             email: customer.email,
@@ -1021,53 +1093,13 @@ app.get("/api/admin/customers", requireAdmin, (req, res) => {
     } catch (error) {
         console.error("Error loading registered customers:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Could not load registered customers."
         });
     }
 });
-// Admin login
-app.post("/api/admin/login", (req, res, next) => {
-    const { username, password } = req.body;
 
-    if (
-        !process.env.ADMIN_USERNAME ||
-        !process.env.ADMIN_PASSWORD ||
-        !process.env.SESSION_SECRET
-    ) {
-        return res.status(500).json({
-            success: false,
-            message: "Admin login is not configured."
-        });
-    }
-
-    if (
-        username !== process.env.ADMIN_USERNAME ||
-        password !== process.env.ADMIN_PASSWORD
-    ) {
-        return res.status(401).json({
-            success: false,
-            message: "Incorrect username or password."
-        });
-    }
-
-    // Create a fresh session after successful login
-    req.session.regenerate((err) => {
-        if (err) return next(err);
-
-        req.session.adminAuthenticated = true;
-
-        req.session.save((saveError) => {
-            if (saveError) return next(saveError);
-
-            res.json({
-                success: true,
-                message: "Admin login successful."
-            });
-        });
-    });
-});
 
 // Check whether the admin is logged in
 app.get("/api/admin/session", (req, res) => {
@@ -1152,13 +1184,10 @@ app.post("/api/orders", async (req, res) => {
                 message: "Please log in before placing an order."
             });
         }
-
-        // Get the customer's identity from the server session.
-        const customers = loadCustomers();
-
-        const customer = customers.find(
-            account => account.id === req.session.customerId
-        );
+// Get the customer's identity from PostgreSQL.
+const customer = await getCustomerById(
+    req.session.customerId
+);
 
         if (!customer) {
             return res.status(401).json({
@@ -1602,11 +1631,9 @@ app.get("/api/customer/orders", async (req, res) => {
     }
 
     try {
-        const customers = loadCustomers();
-
-        const customer = customers.find(
-            account => account.id === req.session.customerId
-        );
+        const customer = await getCustomerById(
+    req.session.customerId
+);
 
         if (!customer) {
             return res.status(401).json({
