@@ -649,8 +649,11 @@ viewDetailsBtn.addEventListener("click", () => {
         </p>
     `;
 
-    // OPEN THE RECEIPT POPUP
-    receiptModal.style.display = "flex";
+  // Save the order number for the Send Receipt button.
+receiptModal.dataset.orderNumber = order.orderNumber;
+
+// OPEN THE RECEIPT POPUP
+receiptModal.style.display = "flex";
 });
 
 actionCell.appendChild(viewDetailsBtn);
@@ -734,6 +737,59 @@ if (printReceiptBtn) {
     printReceiptBtn.addEventListener("click", function (event) {
         event.preventDefault();
         window.print();
+    });
+}
+// SEND RECEIPT TO CUSTOMER
+const sendReceiptBtn = document.getElementById("sendReceiptBtn");
+const sendReceiptMessage = document.getElementById("sendReceiptMessage");
+
+if (sendReceiptBtn) {
+    sendReceiptBtn.addEventListener("click", async function () {
+        const orderNumber = receiptModal?.dataset.orderNumber;
+
+        if (!orderNumber) {
+            if (sendReceiptMessage) {
+                sendReceiptMessage.textContent =
+                    "Please open an order receipt first.";
+            }
+            return;
+        }
+
+        sendReceiptBtn.disabled = true;
+        sendReceiptBtn.textContent = "Sending...";
+
+        if (sendReceiptMessage) {
+            sendReceiptMessage.textContent = "Sending receipt to customer...";
+        }
+
+        try {
+            const response = await apiFetch(
+                `/api/admin/orders/${encodeURIComponent(orderNumber)}/send-receipt`,
+                {
+                    method: "POST"
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result.message || "Could not send receipt."
+                );
+            }
+
+            if (sendReceiptMessage) {
+                sendReceiptMessage.textContent = result.message;
+            }
+
+        } catch (error) {
+            if (sendReceiptMessage) {
+                sendReceiptMessage.textContent = error.message;
+            }
+        } finally {
+            sendReceiptBtn.disabled = false;
+            sendReceiptBtn.textContent = "Send Receipt";
+        }
     });
 }
 

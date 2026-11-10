@@ -1766,6 +1766,266 @@ app.get("/api/admin/brevo-check", async (req, res) => {
         });
     }
 });
+    
+// Admin: send an order receipt to the customer through Brevo.
+app.post(
+    "/api/admin/orders/:orderNumber/send-receipt",
+    requireAdmin,
+    async (req, res) => {
+        try {
+            const orderNumber = String(
+                req.params.orderNumber || ""
+            ).trim();
+
+            if (!orderNumber) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Order number is required."
+                });
+            }
+
+            if (
+                !process.env.BREVO_API_KEY ||
+                !process.env.BREVO_FROM_EMAIL
+            ) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Brevo email settings are incomplete."
+                });
+            }
+
+            // Retrieve the actual saved order.
+            const orders = await loadOrdersFromDatabase();
+
+            const order = orders.find(
+                item => item.orderNumber === orderNumber
+            );
+
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Order not found."
+                });
+            }
+
+            // Use the email saved with the customer's order.
+            const customerEmail = String(
+                order.email || ""
+            ).trim();
+
+            if (
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: "This order has no valid customer email address."
+                });
+            }
+
+            const formatMoney = amount =>
+                `₦${Number(amount || 0).toLocaleString("en-NG")}`;
+
+            // Prevent customer/order information from breaking HTML.
+            const escapeHtml = value =>
+                String(value ?? "").replace(
+                    /[&<>"']/g,
+                    character => ({
+                        "&": "&amp;",
+                        "<": "&lt;",
+                        ">": "&gt;",
+                        '"': "&quot;",
+                        "'": "&#39;"
+                    })[character]
+                );
+
+            const items = Array.isArray(order.items)
+                ? order.items
+                : [];
+
+            const itemRows = items.map(item => {
+                const name = item.name || item.productName || "Product";
+                const quantity = Number(item.quantity) || 0;
+                const price = Number(item.price) || 0;
+                const customization = item.customization || {};
+
+                const customizationText = Object.entries(customization)
+                    .filter(([, value]) =>
+                        value !== "" &&
+                        value !== null &&
+                        value !== undefined
+                    )
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join(", ");
+
+                return `
+                    <tr>
+                        <td style="padding:10px;border-bottom:1px solid #eee;">
+                            ${escapeHtml(name)}
+                            ${
+                                customizationText
+                                    ? `<br><small>${escapeHtml(customizationText)}</small>`
+                                    : ""
+                            }
+                        </td>
+                        <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">
+                            ${quantity}
+                        </td>
+                        <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">
+                            ${formatMoney(price * quantity)}
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+
+            const total = Number(order.total) || items.reduce(
+                (sum, item) =>
+                    sum +
+                    (Number(item.price) || 0) *
+                    (Number(item.quantity) || 0),
+                0
+            );
+
+            const receiptHtml = `
+                <div style="font-family:Arial,sans-serif;max-width:650px;margin:auto;color:#333;">
+                    <div style="background:#4b2e24;color:white;text-align:center;padding:25px;">
+                        <h1 style="margin:0;">Zobac Bakery</h1>
+                        <p style="margin:8px 0;">Start Your Day With Joy</p>
+                        <h2 style="margin-bottom:0;">Order Receipt</h2>
+                    </div>
+
+                    <div style="padding:20px;">
+                        <h3>Thank you for ordering with us!</h3>
+
+                        <p>
+                            <strong>Order Number:</strong>
+                            ${escapeHtml(order.orderNumber)}
+                        </p>
+
+                        <p>
+                            <strong>Customer:</strong>
+                            ${escapeHtml(order.name)}
+                        </p>
+
+                        <p>
+                            <strong>Phone:</strong>
+                            ${escapeHtml(order.phone)}
+                        </p>
+
+                        <p>
+                            <strong>Delivery Address:</strong>
+                            ${escapeHtml(order.address)}
+                        </p>
+
+                        <p>
+                            <strong>Delivery Date:</strong>
+                            ${escapeHtml(order.deliveryDate || "Not specified")}
+                        </p>
+
+                        <h3>Order Items</h3>
+
+                        <table style="width:100%;border-collapse:collapse;">
+                            <thead>
+                                <tr style="background:#f5efff;">
+                                    <th style="padding:10px;text-align:left;">Item</th>
+                                    <th style="padding:10px;">Qty</th>
+                                    <th style="padding:10px;text-align:right;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${itemRows}
+                            </tbody>
+                        </table>
+
+                        <h3 style="text-align:right;">
+                            Total: ${formatMoney(total)}
+                        </h3>
+
+                        <p>
+                            <strong>Payment Method:</strong>
+                            ${escapeHtml(order.paymentMethod)}
+                        </p>
+
+                        <p>
+                            <strong>Payment Status:</strong>
+                            ${escapeHtml(order.paymentStatus)}
+                        </p>
+
+                        <p>
+                            <strong>Order Status:</strong>
+                            ${escapeHtml(order.status)}
+                        </p>
+
+                        <hr>
+
+                        <p style="text-align:center;color:#702bd1;">
+                            Thank you for choosing Zobac Bakery!
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            const emailResponse = await fetch(
+                "https://api.brevo.com/v3/smtp/email",
+                {
+                    method: "POST",
+                    headers: {
+                        "accept": "application/json",
+                        "api-key": process.env.BREVO_API_KEY,
+                        "content-type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        sender: {
+                            name: "Zobac Bakery",
+                            email: process.env.BREVO_FROM_EMAIL
+                        },
+                        to: [
+                            {
+                                email: customerEmail,
+                                name: order.name || "Customer"
+                            }
+                        ],
+                        subject: `Your Zobac Bakery Receipt - ${order.orderNumber}`,
+                        htmlContent: receiptHtml
+                    }),
+                    signal: AbortSignal.timeout(15000)
+                }
+            );
+
+            if (!emailResponse.ok) {
+                const errorDetails = await emailResponse.text();
+
+                console.error(
+                    "RECEIPT EMAIL FAILED:",
+                    emailResponse.status,
+                    errorDetails
+                );
+
+                return res.status(502).json({
+                    success: false,
+                    message: "Brevo could not send the receipt. Please try again."
+                });
+            }
+
+            console.log(
+                `RECEIPT SENT: ${order.orderNumber} to ${customerEmail}`
+            );
+
+            return res.json({
+                success: true,
+                message: `Receipt sent successfully to ${customerEmail}.`
+            });
+
+        } catch (error) {
+            console.error("SEND RECEIPT ERROR:", error.message);
+
+            return res.status(500).json({
+                success: false,
+                message: "Could not send the receipt. Please try again."
+            });
+        }
+    }
+);
+
 
 // Retrieve saved orders.
 app.get("/api/orders", requireAdmin, async (req, res) => {
