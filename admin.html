@@ -611,20 +611,26 @@
                     <p>Order receipt details will appear here.</p>
                 </div>
 
-                <div class="admin-toolbar">
-                    <button type="button" id="printReceipt">
-                        Print Receipt
-                    </button>
+             <div class="admin-toolbar">
 
-                    <button
-                        type="button"
-                        onclick="document.getElementById('receiptModal').style.display='none';"
-                    >
-                        Cancel
-                    </button>
-                </div>
+    <button type="button" id="printReceipt">
+        Print Receipt
+    </button>
 
-            </div>
+    <button type="button" id="sendReceiptBtn">
+        Send Receipt
+    </button>
+
+    <button
+        type="button"
+        onclick="document.getElementById('receiptModal').style.display='none';"
+    >
+        Cancel
+    </button>
+
+</div>
+
+<p id="sendReceiptMessage" class="admin-message" aria-live="polite"></p>
 
         </div>
 
@@ -632,6 +638,7 @@
 
 
     <!-- Load your existing dashboard JavaScript last -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="admin.js"></script>
 
 </body>

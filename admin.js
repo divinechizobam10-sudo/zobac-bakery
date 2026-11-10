@@ -651,7 +651,8 @@ viewDetailsBtn.addEventListener("click", () => {
 
   // Save the order number for the Send Receipt button.
 receiptModal.dataset.orderNumber = order.orderNumber;
-
+receiptModal.dataset.customerPhone = order.phone || "";
+receiptModal.dataset.customerName = order.name || "Customer";
 // OPEN THE RECEIPT POPUP
 receiptModal.style.display = "flex";
 });
@@ -739,53 +740,129 @@ if (printReceiptBtn) {
         window.print();
     });
 }
-// SEND RECEIPT TO CUSTOMER
+
+
+// SEND RECEIPT AS AN IMAGE THROUGH WHATSAPP
 const sendReceiptBtn = document.getElementById("sendReceiptBtn");
 const sendReceiptMessage = document.getElementById("sendReceiptMessage");
 
 if (sendReceiptBtn) {
     sendReceiptBtn.addEventListener("click", async function () {
-        const orderNumber = receiptModal?.dataset.orderNumber;
+        const receiptModal = document.getElementById("receiptModal");
+        const receiptDetails = document.getElementById("receiptDetails");
 
-        if (!orderNumber) {
-            if (sendReceiptMessage) {
-                sendReceiptMessage.textContent =
-                    "Please open an order receipt first.";
-            }
+        const orderNumber = receiptModal?.dataset.orderNumber;
+        const customerName = receiptModal?.dataset.customerName || "Customer";
+
+        let phone = String(
+            receiptModal?.dataset.customerPhone || ""
+        ).replace(/\D/g, "");
+
+        if (phone.startsWith("0")) {
+            phone = "234" + phone.slice(1);
+        }
+
+        if (!orderNumber || !receiptDetails) {
+            alert("Please open an order receipt first.");
+            return;
+        }
+
+        if (!phone || phone.length < 10) {
+            alert("This customer's phone number is missing or invalid.");
             return;
         }
 
         sendReceiptBtn.disabled = true;
-        sendReceiptBtn.textContent = "Sending...";
+        sendReceiptBtn.textContent = "Preparing Image...";
 
         if (sendReceiptMessage) {
-            sendReceiptMessage.textContent = "Sending receipt to customer...";
+            sendReceiptMessage.textContent =
+                "Converting receipt into an image...";
         }
 
+        const whatsappWindow = window.open("about:blank", "_blank");
+
         try {
-            const response = await apiFetch(
-                `/api/admin/orders/${encodeURIComponent(orderNumber)}/send-receipt`,
-                {
-                    method: "POST"
-                }
-            );
+            if (typeof html2canvas === "undefined") {
+                throw new Error("Image converter not loaded. Refresh the page and try again.");
+            }
 
-            const result = await response.json();
+          // Temporarily expand the receipt to show all its contents.
+const oldHeight = receiptDetails.style.height;
+const oldMaxHeight = receiptDetails.style.maxHeight;
+const oldOverflow = receiptDetails.style.overflow;
 
-            if (!response.ok) {
-                throw new Error(
-                    result.message || "Could not send receipt."
-                );
+receiptDetails.style.height = "auto";
+receiptDetails.style.maxHeight = "none";
+receiptDetails.style.overflow = "visible";
+
+const fullHeight = receiptDetails.scrollHeight;
+const fullWidth = receiptDetails.scrollWidth;
+
+const canvas = await html2canvas(receiptDetails, {
+    scale: 2,
+    backgroundColor: "#ffffff",
+    useCORS: true,
+    width: fullWidth,
+    height: fullHeight,
+    windowWidth: Math.max(window.innerWidth, fullWidth),
+    windowHeight: fullHeight,
+    scrollY: 0
+});
+
+// Restore the original receipt layout.
+receiptDetails.style.height = oldHeight;
+receiptDetails.style.maxHeight = oldMaxHeight;
+receiptDetails.style.overflow = oldOverflow;
+
+            const blob = await new Promise(resolve => {
+                canvas.toBlob(resolve, "image/png");
+            });
+
+            if (!blob) {
+                throw new Error("Could not create receipt image.");
+            }
+
+            const imageURL = URL.createObjectURL(blob);
+            const downloadLink = document.createElement("a");
+
+            downloadLink.href = imageURL;
+            downloadLink.download = `Zobac-Receipt-${orderNumber}.png`;
+
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+
+            const message =
+                `Hello ${customerName}! Here is your Zobac Bakery receipt for order ${orderNumber}. Thank you for choosing us!`;
+
+            const whatsappURL =
+                `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+            if (whatsappWindow) {
+                whatsappWindow.location.href = whatsappURL;
+            } else {
+                window.open(whatsappURL, "_blank");
             }
 
             if (sendReceiptMessage) {
-                sendReceiptMessage.textContent = result.message;
+                sendReceiptMessage.textContent =
+                    "Receipt image downloaded. Attach the PNG image in WhatsApp and send it.";
             }
 
+            setTimeout(() => URL.revokeObjectURL(imageURL), 60000);
+
         } catch (error) {
+            console.error("Receipt image error:", error);
+
+            if (whatsappWindow) {
+                whatsappWindow.close();
+            }
+
             if (sendReceiptMessage) {
                 sendReceiptMessage.textContent = error.message;
             }
+
         } finally {
             sendReceiptBtn.disabled = false;
             sendReceiptBtn.textContent = "Send Receipt";
