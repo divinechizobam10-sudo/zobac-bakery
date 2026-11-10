@@ -1101,6 +1101,53 @@ app.get("/api/admin/customers", requireAdmin, async (req, res) => {
 });
 
 
+app.post("/api/admin/login", (req, res, next) => {
+    const { username, password } = req.body || {};
+
+    if (!username || !password) {
+        return res.status(400).json({
+            success: false,
+            message: "Please enter your username and password."
+        });
+    }
+
+    if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
+        return res.status(500).json({
+            success: false,
+            message: "Admin login is not configured on the server."
+        });
+    }
+
+    if (
+        username !== process.env.ADMIN_USERNAME ||
+        password !== process.env.ADMIN_PASSWORD
+    ) {
+        return res.status(401).json({
+            success: false,
+            message: "Incorrect admin username or password."
+        });
+    }
+
+    req.session.regenerate((err) => {
+        if (err) {
+            return next(err);
+        }
+
+        req.session.adminAuthenticated = true;
+
+        req.session.save((saveError) => {
+            if (saveError) {
+                return next(saveError);
+            }
+
+            return res.json({
+                success: true,
+                message: "Admin login successful."
+            });
+        });
+    });
+});
+
 // Check whether the admin is logged in
 app.get("/api/admin/session", (req, res) => {
     res.json({
